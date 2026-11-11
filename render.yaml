@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ju-file
+    runtime: docker
+    plan: free
+    autoDeploy: true
+

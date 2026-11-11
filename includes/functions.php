@@ -21,7 +21,9 @@ function redirect(string $path): never
 /** رابط مطلق داخل التطبيق (يُستخدم لروابط المشاركة و QR). */
 function app_url(string $path = ''): string
 {
-    $scheme = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $scheme = $isHttps ? 'https' : 'http';
     $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $dir    = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
     $dir    = preg_replace('#/api$#', '', $dir); // ملفات api/ تشارك نفس الجذر

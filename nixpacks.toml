@@ -1,0 +1,6 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo_mysql", "php83Extensions.gd", "php83Extensions.zip", "php83Extensions.mbstring", "php83Extensions.curl", "php83Extensions.exif"]
+
+[start]
+cmd = "php -d upload_max_filesize=60M -d post_max_size=65M -d memory_limit=512M -S 0.0.0.0:${PORT:-8080} -t ."
+

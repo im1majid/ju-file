@@ -343,6 +343,13 @@
         }
         if (ct.includes('application/json')) {
             const data = await res.json();
+            if (data.clientSide) {
+                const out = page.category === 'image'
+                    ? await runClientImageTool(activeTool, selectedFiles[0], new FormData(form))
+                    : await runClientZipTool(selectedFiles, new FormData(form));
+                renderFileResult(out.blob, out.name, out.info);
+                return;
+            }
             if (data.stats) renderStatsResult(data.stats);
             return;
         }
@@ -350,6 +357,140 @@
         const name = decodeURIComponent(res.headers.get('X-File-Name') || 'output');
         const info = res.headers.get('X-Info') ? decodeURIComponent(res.headers.get('X-Info')) : '';
         renderFileResult(blob, name, info);
+    }
+
+    async function runClientImageTool(tool, file, fd) {
+        const url = URL.createObjectURL(file);
+        const img = await new Promise((res, rej) => {
+            const el = new Image();
+            el.onload = () => res(el);
+            el.onerror = () => rej(new Error('تعذّرت قراءة الصورة.'));
+            el.src = url;
+        }).finally(() => URL.revokeObjectURL(url));
+
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+        const base = file.name.replace(/\.[^.]+$/, '');
+        let outExt = ext === 'jpeg' ? 'jpg' : ext;
+        let quality = 0.9, suffix = tool;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (tool === 'compress') {
+            quality = Math.max(0.1, Number(fd.get('quality') || 70) / 100);
+            const fmt = fd.get('format') || 'keep';
+            outExt = fmt === 'keep' ? (['gif', 'bmp'].includes(outExt) ? 'jpg' : outExt) : fmt;
+            const maxW = Number(fd.get('max_width') || 0);
+            if (maxW > 0 && w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+        } else if (tool === 'resize') {
+            let nw = Number(fd.get('width') || 0), nh = Number(fd.get('height') || 0);
+            if (!nw && !nh) throw new Error('أدخل العرض أو الارتفاع على الأقل.');
+            if (fd.get('keep_ratio') === '1' || !nw || !nh) {
+                const r = nw && nh ? Math.min(nw / w, nh / h) : (nw ? nw / w : nh / h);
+                nw = Math.max(1, Math.round(w * r)); nh = Math.max(1, Math.round(h * r));
+            }
+            w = canvas.width = nw; h = canvas.height = nh;
+            ctx.drawImage(img, 0, 0, w, h);
+            suffix = `${w}x${h}`;
+        } else if (tool === 'crop') {
+            const x = Math.max(0, Number(fd.get('x') || 0)), y = Math.max(0, Number(fd.get('y') || 0));
+            const cw = Math.min(Number(fd.get('width') || w), w - x);
+            const ch = Math.min(Number(fd.get('height') || h), h - y);
+            if (cw <= 0 || ch <= 0) throw new Error('منطقة القص خارج حدود الصورة.');
+            w = canvas.width = cw; h = canvas.height = ch;
+            ctx.drawImage(img, x, y, cw, ch, 0, 0, cw, ch);
+        } else if (tool === 'rotate') {
+            const angle = Number(fd.get('angle') || 0);
+            const flip = fd.get('flip') || 'none';
+            const swap = angle === 90 || angle === 270;
+            canvas.width = swap ? h : w; canvas.height = swap ? w : h;
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            if (angle) ctx.rotate((angle * Math.PI) / 180);
+            ctx.scale(flip === 'h' ? -1 : 1, flip === 'v' ? -1 : 1);
+            ctx.drawImage(img, -w / 2, -h / 2);
+            w = canvas.width; h = canvas.height;
+        } else if (tool === 'convert') {
+            outExt = fd.get('format') || 'png';
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(img, 0, 0);
+            suffix = '';
+        } else if (tool === 'filter') {
+            const eff = fd.get('effect') || 'grayscale';
+            const map = { grayscale: 'grayscale(100%)', sepia: 'sepia(100%)', negate: 'invert(100%)', blur: 'blur(4px)', sharpen: 'contrast(145%)', brighten: 'brightness(135%)' };
+            canvas.width = w; canvas.height = h;
+            ctx.filter = map[eff] || 'none';
+            ctx.drawImage(img, 0, 0);
+            suffix = eff;
+        }
+
+        const mimes = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/png', bmp: 'image/bmp' };
+        const mime = mimes[outExt] || 'image/png';
+        const blob = await new Promise((r) => canvas.toBlob(r, mime, quality));
+        return { blob, name: `${base}${suffix ? '-' + suffix : ''}.${outExt}`, info: `${w}×${h} بكسل` };
+    }
+
+    async function runClientZipTool(files, fd) {
+        const crcTable = new Uint32Array(256).map((_, n) => {
+            let c = n;
+            for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            return c >>> 0;
+        });
+        const crc32 = (u8) => {
+            let c = 0xFFFFFFFF;
+            for (let i = 0; i < u8.length; i++) c = crcTable[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+            return (c ^ 0xFFFFFFFF) >>> 0;
+        };
+        const enc = new TextEncoder();
+        const parts = [], central = [];
+        let offset = 0;
+
+        for (const f of files) {
+            const nameBytes = enc.encode(f.name);
+            const data = new Uint8Array(await f.arrayBuffer());
+            const crc = crc32(data);
+            const local = new DataView(new ArrayBuffer(30 + nameBytes.length));
+            local.setUint32(0, 0x04034b50, true);
+            local.setUint16(4, 20, true);
+            local.setUint16(6, 0x0800, true); // UTF-8
+            local.setUint32(14, crc, true);
+            local.setUint32(18, data.length, true);
+            local.setUint32(22, data.length, true);
+            local.setUint16(26, nameBytes.length, true);
+            new Uint8Array(local.buffer, 30).set(nameBytes);
+            parts.push(new Uint8Array(local.buffer), data);
+
+            const cd = new DataView(new ArrayBuffer(46 + nameBytes.length));
+            cd.setUint32(0, 0x02014b50, true);
+            cd.setUint16(4, 20, true);
+            cd.setUint16(6, 20, true);
+            cd.setUint16(8, 0x0800, true);
+            cd.setUint32(16, crc, true);
+            cd.setUint32(20, data.length, true);
+            cd.setUint32(24, data.length, true);
+            cd.setUint16(28, nameBytes.length, true);
+            cd.setUint32(42, offset, true);
+            new Uint8Array(cd.buffer, 46).set(nameBytes);
+            central.push(new Uint8Array(cd.buffer));
+            offset += 30 + nameBytes.length + data.length;
+        }
+
+        const cdSize = central.reduce((s, b) => s + b.length, 0);
+        const eocd = new DataView(new ArrayBuffer(22));
+        eocd.setUint32(0, 0x06054b50, true);
+        eocd.setUint16(8, files.length, true);
+        eocd.setUint16(10, files.length, true);
+        eocd.setUint32(12, cdSize, true);
+        eocd.setUint32(16, offset, true);
+
+        const archive = (fd.get('archive') || 'files').trim().replace(/\.zip$/i, '') || 'files';
+        return {
+            blob: new Blob([...parts, ...central, new Uint8Array(eocd.buffer)], { type: 'application/zip' }),
+            name: `${archive}.zip`,
+            info: `${files.length} ملف`,
+        };
     }
 
     function logBrowserOp() {

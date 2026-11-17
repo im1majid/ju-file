@@ -2,9 +2,10 @@
 set -e
 
 # ضبط منفذ Apache حسب متغير PORT الذي يمرره Railway (افتراضياً 8080)
+# نكتب الملف من جديد في كل تشغيل بدل الاستبدال، حتى لا يتضاعف الرقم عند إعادة تشغيل الحاوية (808080...)
 PORT="${PORT:-8080}"
-sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf
-sed -i "s/:80>/:${PORT}>/g" /etc/apache2/sites-available/000-default.conf
+echo "Listen ${PORT}" > /etc/apache2/ports.conf
+sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
 # تجهيز .env إن لم يكن موجوداً
 if [ ! -f /var/www/html/.env ]; then

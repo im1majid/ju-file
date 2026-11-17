@@ -502,3 +502,32 @@ main { flex: 1; }
 [dir="ltr"] .cat-card:hover .icon-directional {
     transform: scaleX(-1) translateX(-4px);
 }
+
+/* شريط التقدم الموحد لرفع ومعالجة الملفات */
+.ju-progress-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .65rem .85rem;
+}
+.ju-progress-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+}
+.ju-progress-fill {
+    height: 100%;
+    background: var(--accent-btn);
+    border-radius: 999px;
+    transition: width .2s ease;
+}
+.ju-progress-fill.indeterminate {
+    background-image: linear-gradient(45deg, rgba(255,255,255,.18) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.18) 50%, rgba(255,255,255,.18) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+    animation: ju-stripes 1s linear infinite;
+}
+@keyframes ju-stripes {
+    from { background-position: 1rem 0; }
+    to   { background-position: 0 0; }
+}

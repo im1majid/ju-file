@@ -335,6 +335,14 @@
   "«:label» أقل من :min.": "«:label» is below :min.",
   "«:label» أكبر من :max.": "«:label» exceeds :max.",
   "خيار غير صالح في «:label».": "Invalid option for «:label».",
-  "«:label» أطول من اللازم.": "«:label» is too long."
+  "«:label» أطول من اللازم.": "«:label» is too long.",
+  "جاري الرفع...": "Uploading...",
+  "تم الرفع، جاري الحفظ وإنشاء الرابط...": "Uploaded, saving & generating link...",
+  "تم الرفع، جاري المعالجة على الخادم...": "Uploaded, processing on server...",
+  "باقي ~ :time": "~:time left",
+  "ث_وحدة": "s",
+  "د_وحدة": "m",
+  "حجم الملف (:size) يتجاوز الحد المسموح (:max).": "File size (:size) exceeds allowed limit (:max).",
+  "اختر ملفاً للمشاركة أولاً.": "Please select a file to share first."
 }
 

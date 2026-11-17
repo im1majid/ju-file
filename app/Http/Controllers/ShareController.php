@@ -111,7 +111,11 @@ class ShareController extends Controller
 
         $publicUrl = $share->publicUrl();
         if ($ajax) {
-            return response()->json(['url' => $publicUrl, 'token' => $token]);
+            return response()->json([
+                'url'      => $publicUrl,
+                'token'    => $token,
+                'show_url' => route('shares.show', $token),
+            ]);
         }
 
         return redirect()->route('shares.show', $token)

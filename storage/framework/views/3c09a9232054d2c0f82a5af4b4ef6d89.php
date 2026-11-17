@@ -49,6 +49,14 @@
         'pdfOneImage'     => __('اختر صورة واحدة على الأقل.'),
         'pdfPagesCount'   => __(':n صفحة'),
         'pdfNoMatch'      => __('لا توجد صفحات مطابقة.'),
+        'uploading'       => __('جاري الرفع...'),
+        'savingShare'     => __('تم الرفع، جاري الحفظ وإنشاء الرابط...'),
+        'processingServer'=> __('تم الرفع، جاري المعالجة على الخادم...'),
+        'etaPrefix'       => __('باقي ~ :time'),
+        'secShort'        => __('ث_وحدة'),
+        'minShort'        => __('د_وحدة'),
+        'tooBigClient'    => __('حجم الملف (:size) يتجاوز الحد المسموح (:max).'),
+        'chooseFileShare' => __('اختر ملفاً للمشاركة أولاً.'),
     ];
 ?>
 <!doctype html>
@@ -66,7 +74,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <?php endif; ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?php echo e(asset('assets/css/style.css?v=9')); ?>" rel="stylesheet">
+    <link href="<?php echo e(asset('assets/css/style.css?v=10')); ?>" rel="stylesheet">
     <script>
         window.JU_I18N = <?php echo json_encode($jsI18N, JSON_UNESCAPED_UNICODE, 512) ?>;
         (() => {
@@ -161,7 +169,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?php echo e(asset('assets/vendor/qrcode.js')); ?>"></script>
-<script src="<?php echo e(asset('assets/js/app.js?v=5')); ?>"></script>
+<script src="<?php echo e(asset('assets/js/app.js?v=6')); ?>"></script>
 <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>

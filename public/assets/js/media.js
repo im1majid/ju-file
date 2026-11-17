@@ -11,6 +11,7 @@ window.JU_MEDIA = (() => {
     };
 
     let ffmpeg = null;
+    let runStartedAt = 0;
 
     const MIMES = {
         mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
@@ -24,11 +25,17 @@ window.JU_MEDIA = (() => {
         if (!window.FFmpegWASM?.FFmpeg) {
             throw new Error(tr('ffmpegErr', 'مكتبة معالجة الوسائط لم تُحمّل.'));
         }
-        onProgress(tr('loadingFfmpeg', 'جاري تهيئة محرك الوسائط (أول مرة فقط)...'));
+        onProgress({ pct: 0, label: tr('loadingFfmpeg', 'جاري تهيئة محرك الوسائط (أول مرة فقط)...'), animated: true });
         ffmpeg = new window.FFmpegWASM.FFmpeg();
         ffmpeg.on('progress', ({ progress }) => {
             if (Number.isFinite(progress) && progress > 0 && progress <= 1) {
-                onProgress(`${tr('processing', 'جاري المعالجة...')} ${Math.round(progress * 100)}%`);
+                const pct = Math.min(99, Math.round(progress * 100));
+                let etaSec = null;
+                if (runStartedAt && progress > 0.03) {
+                    const elapsed = (Date.now() - runStartedAt) / 1000;
+                    etaSec = Math.max(1, Math.round((elapsed / progress) * (1 - progress)));
+                }
+                onProgress({ pct, label: tr('processing', 'جاري المعالجة...'), etaSec });
             }
         });
         await ffmpeg.load({
@@ -50,7 +57,7 @@ window.JU_MEDIA = (() => {
         const base = file.name.replace(/\.[^.]+$/, '');
         const inName = `input.${ext}`;
 
-        onProgress(tr('readingFile', 'جاري قراءة الملف...'));
+        onProgress({ pct: 5, label: tr('readingFile', 'جاري قراءة الملف...'), animated: true });
         await ff.writeFile(inName, new Uint8Array(await file.arrayBuffer()));
 
         let outExt = ext;
@@ -155,7 +162,8 @@ window.JU_MEDIA = (() => {
         }
 
         const outName = `output.${outExt}`;
-        onProgress(tr('processing', 'جاري المعالجة...'));
+        runStartedAt = Date.now();
+        onProgress({ pct: 0, label: tr('processing', 'جاري المعالجة...'), animated: true });
         const code = await ff.exec([...args, outName]);
         if (code !== 0) {
             await ff.deleteFile(inName).catch(() => {});

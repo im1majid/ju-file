@@ -156,7 +156,131 @@
         });
     });
 
+    const fmtEta = (sec) => {
+        if (!Number.isFinite(sec) || sec <= 0) return '';
+        const s = Math.ceil(sec);
+        const m = Math.floor(s / 60);
+        const rem = s % 60;
+        const unitS = tr('secShort', 'ث');
+        const unitM = tr('minShort', 'د');
+        const timeStr = m > 0 ? `${m}${unitM} ${rem}${unitS}` : `${s}${unitS}`;
+        return tr('etaPrefix', 'باقي ~ :time', { time: timeStr });
+    };
+
+    const renderProgress = (box, { pct = 0, label = '', detail = '', etaSec = null, animated = false }) => {
+        const p = Math.max(0, Math.min(100, Math.round(pct)));
+        const eta = fmtEta(etaSec);
+        const rightText = [detail, eta, `${p}%`].filter(Boolean).join(' · ');
+        box.classList.remove('d-none');
+        box.innerHTML = `
+            <div class="ju-progress-box">
+                <div class="d-flex justify-content-between align-items-center small mb-1 gap-2">
+                    <span class="fw-medium text-truncate">${esc(label)}</span>
+                    <span class="text-secondary text-nowrap" dir="auto">${esc(rightText)}</span>
+                </div>
+                <div class="ju-progress-track">
+                    <div class="ju-progress-fill ${animated ? 'indeterminate' : ''}" style="width:${animated && p === 0 ? 100 : p}%"></div>
+                </div>
+            </div>`;
+    };
+
+    const xhrPost = (url, formData, { responseType = 'json', onProgress } = {}) => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const startedAt = Date.now();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('X-CSRF-TOKEN', csrf());
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.responseType = responseType;
+
+        xhr.upload.onprogress = (ev) => {
+            if (!ev.lengthComputable || !onProgress) return;
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            const elapsed = (Date.now() - startedAt) / 1000;
+            const speed = elapsed > 0.25 ? ev.loaded / elapsed : 0;
+            const etaSec = speed > 0 && ev.loaded < ev.total ? (ev.total - ev.loaded) / speed : null;
+            onProgress({ pct, loaded: ev.loaded, total: ev.total, etaSec });
+        };
+
+        xhr.upload.onload = () => {
+            if (onProgress) onProgress({ pct: 100, loaded: 1, total: 1, etaSec: null, finishedUpload: true });
+        };
+
+        xhr.onload = async () => {
+            const ct = xhr.getResponseHeader('Content-Type') || '';
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve({ status: xhr.status, ct, response: xhr.response, xhr });
+                return;
+            }
+            let msg = tr('processErr', 'تعذّر تنفيذ العملية.');
+            try {
+                const raw = responseType === 'blob' && xhr.response instanceof Blob
+                    ? await xhr.response.text()
+                    : (typeof xhr.response === 'string' ? xhr.response : JSON.stringify(xhr.response));
+                const j = JSON.parse(raw);
+                msg = j.error || j.message || (j.errors ? Object.values(j.errors).flat().join('\n') : msg);
+            } catch {}
+            reject(new Error(msg));
+        };
+
+        xhr.onerror = () => reject(new Error(tr('genericErr', 'حدث خطأ أثناء المعالجة.')));
+        xhr.send(formData);
+    });
+
     renderAllQr();
+
+    // شريط التقدم لصفحة المشاركة المباشرة (/share)
+    const shareForm = document.getElementById('shareForm');
+    if (shareForm) {
+        shareForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInp = document.getElementById('shareFile');
+            const alertBox = document.getElementById('shareAlert');
+            const progBox = document.getElementById('shareProgress');
+            const submitBtn = document.getElementById('shareSubmitBtn');
+            const maxBytes = Number(shareForm.dataset.maxBytes || 0);
+
+            const showErr = (msg) => {
+                alertBox.className = 'alert alert-danger py-2 small mb-3';
+                alertBox.innerHTML = esc(msg).replace(/\n/g, '<br>');
+            };
+
+            alertBox.className = 'd-none';
+            const f = fileInp?.files?.[0];
+            if (!f) {
+                showErr(tr('chooseFileShare', 'اختر ملفاً للمشاركة أولاً.'));
+                return;
+            }
+            if (maxBytes > 0 && f.size > maxBytes) {
+                showErr(tr('tooBigClient', 'حجم الملف (:size) يتجاوز الحد المسموح (:max).', { size: fmtBytes(f.size), max: fmtBytes(maxBytes) }));
+                return;
+            }
+
+            const origBtn = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${esc(tr('uploading', 'جاري الرفع...'))}`;
+
+            try {
+                const fd = new FormData(shareForm);
+                fd.append('_token', csrf());
+                fd.append('ajax', '1');
+                const { response } = await xhrPost(shareForm.action, fd, {
+                    responseType: 'json',
+                    onProgress: ({ pct, loaded, total, etaSec, finishedUpload }) => {
+                        renderProgress(progBox, finishedUpload
+                            ? { pct: 100, label: tr('savingShare', 'تم الرفع، جاري الحفظ وإنشاء الرابط...'), animated: true }
+                            : { pct, label: tr('uploading', 'جاري الرفع...'), detail: `${fmtBytes(loaded)} / ${fmtBytes(total)}`, etaSec });
+                    },
+                });
+                if (!response?.show_url && !response?.url) throw new Error(tr('linkErr', 'تعذّر إنشاء الرابط.'));
+                window.location.href = response.show_url || response.url;
+            } catch (err) {
+                progBox.classList.add('d-none');
+                showErr(err.message || tr('linkErr', 'تعذّر إنشاء الرابط.'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origBtn;
+            }
+        });
+    }
 
     /* ---------------- صفحات الأدوات ---------------- */
 
@@ -583,18 +707,17 @@
         fd.append('tool', activeTool);
         selectedFiles.forEach((f) => fd.append('files[]', f));
 
-        const res = await fetch('api/process.php', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
-            body: fd,
+        const { ct, response, xhr } = await xhrPost('api/process.php', fd, {
+            responseType: 'blob',
+            onProgress: ({ pct, loaded, total, etaSec, finishedUpload }) => {
+                renderProgress(statusBox, finishedUpload
+                    ? { pct: 100, label: tr('processingServer', 'تم الرفع، جاري المعالجة على الخادم...'), animated: true }
+                    : { pct, label: tr('uploading', 'جاري الرفع...'), detail: `${fmtBytes(loaded)} / ${fmtBytes(total)}`, etaSec });
+            },
         });
-        const ct = res.headers.get('Content-Type') || '';
-        if (!res.ok) {
-            const err = ct.includes('application/json') ? (await res.json()).error : tr('processErr', 'تعذّر تنفيذ العملية.');
-            throw new Error(err || tr('processErr', 'تعذّر تنفيذ العملية.'));
-        }
+
         if (ct.includes('application/json')) {
-            const data = await res.json();
+            const data = JSON.parse(await response.text());
             if (data.clientSide) {
                 const out = page.category === 'image'
                     ? await runClientImageTool(activeTool, selectedFiles[0], new FormData(form))
@@ -605,10 +728,9 @@
             if (data.stats) renderStatsResult(data.stats);
             return;
         }
-        const blob = await res.blob();
-        const name = decodeURIComponent(res.headers.get('X-File-Name') || 'output');
-        const info = res.headers.get('X-Info') ? decodeURIComponent(res.headers.get('X-Info')) : '';
-        renderFileResult(blob, name, info);
+        const name = decodeURIComponent(xhr.getResponseHeader('X-File-Name') || 'output');
+        const info = xhr.getResponseHeader('X-Info') ? decodeURIComponent(xhr.getResponseHeader('X-Info')) : '';
+        renderFileResult(response, name, info);
     }
 
     async function runClientImageTool(tool, file, fd) {
@@ -805,7 +927,7 @@
                 return;
             }
             btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${esc(tr('creatingLink', 'جاري رفع الملف وإنشاء الرابط...'))}`;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${esc(tr('uploading', 'جاري الرفع...'))}`;
             try {
                 const fd = new FormData();
                 fd.append('_token', csrf());
@@ -813,13 +935,15 @@
                 fd.append('ajax', '1');
                 fd.append('expiry', '24');
                 fd.append('file', new File([blob], name, { type: blob.type || 'application/octet-stream' }));
-                const r = await fetch('share.php', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
-                    body: fd,
+                const { response: data } = await xhrPost('share.php', fd, {
+                    responseType: 'json',
+                    onProgress: ({ pct, loaded, total, etaSec, finishedUpload }) => {
+                        renderProgress(box, finishedUpload
+                            ? { pct: 100, label: tr('savingShare', 'تم الرفع، جاري الحفظ وإنشاء الرابط...'), animated: true }
+                            : { pct, label: tr('uploading', 'جاري الرفع...'), detail: `${fmtBytes(loaded)} / ${fmtBytes(total)}`, etaSec });
+                    },
                 });
-                const data = await r.json();
-                if (!r.ok || !data.url) throw new Error(data.error || tr('linkErr', 'تعذّر إنشاء الرابط.'));
+                if (!data?.url) throw new Error(data?.error || tr('linkErr', 'تعذّر إنشاء الرابط.'));
                 const u = esc(data.url);
                 box.innerHTML = `
                     <div class="share-box mt-2">
@@ -880,10 +1004,14 @@
                 if (t.engine === 'server') {
                     await runServerTool(form);
                 } else if (t.engine === 'ffmpeg') {
-                    const out = await window.JU_MEDIA.run(page.category, activeTool, selectedFiles[0], new FormData(form), (msg) => setStatus('info', esc(msg)));
+                    const out = await window.JU_MEDIA.run(page.category, activeTool, selectedFiles[0], new FormData(form), (prog) => {
+                        if (typeof prog === 'object' && prog) renderProgress(statusBox, prog);
+                        else setStatus('info', esc(prog));
+                    });
                     renderFileResult(out.blob, out.name, out.info);
                     logBrowserOp();
                 } else if (t.engine === 'pdf') {
+                    renderProgress(statusBox, { pct: 0, label: tr('processing', 'جاري المعالجة...'), animated: true });
                     const out = await window.JU_PDF.run(activeTool, selectedFiles, new FormData(form));
                     renderFileResult(out.blob, out.name, out.info);
                     logBrowserOp();

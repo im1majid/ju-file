@@ -29,7 +29,7 @@ class ToolController extends Controller
         $scripts = [];
         if (in_array('ffmpeg', $engines, true)) {
             $scripts[] = 'assets/vendor/ffmpeg.js';
-            $scripts[] = 'assets/js/media.js?v=3';
+            $scripts[] = 'assets/js/media.js?v=4';
         }
         if (in_array('pdf', $engines, true)) {
             $scripts[] = 'assets/vendor/pdf-lib.min.js';

@@ -18,7 +18,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="<?php echo e(route('shares.store')); ?>" enctype="multipart/form-data" novalidate>
+            <form id="shareForm" method="post" action="<?php echo e(route('shares.store')); ?>" enctype="multipart/form-data" data-max-bytes="<?php echo e($maxUploadBytes); ?>" novalidate>
                 <?php echo csrf_field(); ?>
                 <label class="dropzone mb-3" for="shareFile" data-simple-dropzone>
                     <i class="bi bi-cloud-arrow-up display-6 text-accent"></i>
@@ -55,7 +55,10 @@
                     </div>
                 </div>
 
-                <button class="btn btn-accent btn-lg w-100"><i class="bi bi-link-45deg"></i> <?php echo e(__('إنشاء الرابط ورمز QR')); ?></button>
+                <div id="shareAlert" class="d-none"></div>
+                <div id="shareProgress" class="mb-3 d-none"></div>
+
+                <button id="shareSubmitBtn" class="btn btn-accent btn-lg w-100"><i class="bi bi-link-45deg"></i> <?php echo e(__('إنشاء الرابط ورمز QR')); ?></button>
             </form>
         </div>
     </div>

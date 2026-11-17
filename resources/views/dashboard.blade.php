@@ -1,23 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'ملفاتي')
+@section('title', __('ملفاتي'))
 
 @section('content')
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
-        <h1 class="h3 fw-bold mb-0">ملفاتي وروابطي</h1>
-        <p class="text-secondary small mb-0">مرحباً {{ $user->name }} — أدر ملفاتك المشاركة وتابع آخر العمليات.</p>
+        <h1 class="h3 fw-bold mb-0">{{ __('ملفاتي وروابطي') }}</h1>
+        <p class="text-secondary small mb-0">{{ __('مرحباً :name — أدر ملفاتك المشاركة وتابع آخر العمليات.', ['name' => $user->name]) }}</p>
     </div>
-    <a class="btn btn-accent" href="{{ route('shares.create') }}"><i class="bi bi-plus-lg"></i> مشاركة ملف جديد</a>
+    <a class="btn btn-accent" href="{{ route('shares.create') }}"><i class="bi bi-plus-lg"></i> {{ __('مشاركة ملف جديد') }}</a>
 </div>
 
 <div class="row g-3 mb-4">
     @php
         $statCards = [
-            ['bi-files', $stats['files'], 'ملفات نشطة'],
-            ['bi-download', $stats['downloads'], 'إجمالي التنزيلات'],
-            ['bi-hdd', \App\Services\ToolCatalog::formatBytes($stats['size']), 'المساحة المستخدمة'],
-            ['bi-activity', $opsCount, 'عمليات منجزة'],
+            ['bi-files', $stats['files'], __('ملفات نشطة')],
+            ['bi-download', $stats['downloads'], __('إجمالي التنزيلات')],
+            ['bi-hdd', \App\Services\ToolCatalog::formatBytes($stats['size']), __('المساحة المستخدمة')],
+            ['bi-activity', $opsCount, __('عمليات منجزة')],
         ];
     @endphp
     @foreach($statCards as [$icon, $val, $lbl])
@@ -36,35 +36,35 @@
 <form class="panel mb-4" method="get" action="{{ route('dashboard') }}">
     <div class="row g-2 align-items-center">
         <div class="col-md-4">
-            <input class="form-control" name="q" value="{{ $q }}" placeholder="ابحث بالاسم أو العنوان...">
+            <input class="form-control" name="q" value="{{ $q }}" placeholder="{{ __('ابحث بالاسم أو العنوان...') }}">
         </div>
         <div class="col-6 col-md-2">
             <select class="form-select" name="category">
-                <option value="">كل الأنواع</option>
+                <option value="">{{ __('كل الأنواع') }}</option>
                 @foreach($categories as $k => $v)
-                    <option value="{{ $k }}" @selected($category === $k)>{{ $v }}</option>
+                    <option value="{{ $k }}" @selected($category === $k)>{{ __($v) }}</option>
                 @endforeach
             </select>
         </div>
         <div class="col-6 col-md-2">
             <select class="form-select" name="status">
-                <option value="active" @selected($status === 'active')>النشطة فقط</option>
-                <option value="all" @selected($status === 'all')>الكل</option>
-                <option value="expired" @selected($status === 'expired')>المنتهية</option>
+                <option value="active" @selected($status === 'active')>{{ __('النشطة فقط') }}</option>
+                <option value="all" @selected($status === 'all')>{{ __('الكل') }}</option>
+                <option value="expired" @selected($status === 'expired')>{{ __('المنتهية') }}</option>
             </select>
         </div>
         <div class="col-6 col-md-2">
             <select class="form-select" name="sort">
-                <option value="newest" @selected($sort === 'newest')>الأحدث</option>
-                <option value="oldest" @selected($sort === 'oldest')>الأقدم</option>
-                <option value="downloads" @selected($sort === 'downloads')>الأكثر تنزيلاً</option>
-                <option value="size" @selected($sort === 'size')>الأكبر حجماً</option>
+                <option value="newest" @selected($sort === 'newest')>{{ __('الأحدث') }}</option>
+                <option value="oldest" @selected($sort === 'oldest')>{{ __('الأقدم') }}</option>
+                <option value="downloads" @selected($sort === 'downloads')>{{ __('الأكثر تنزيلاً') }}</option>
+                <option value="size" @selected($sort === 'size')>{{ __('الأكبر حجماً') }}</option>
             </select>
         </div>
         <div class="col-6 col-md-2 d-flex gap-1">
-            <button class="btn btn-accent flex-grow-1">تصفية</button>
+            <button class="btn btn-accent flex-grow-1">{{ __('تصفية') }}</button>
             @if($q !== '' || $category !== '' || $status !== 'active' || $sort !== 'newest')
-                <a class="btn btn-light" href="{{ route('dashboard') }}" title="إعادة تعيين"><i class="bi bi-x-lg"></i></a>
+                <a class="btn btn-light" href="{{ route('dashboard') }}" title="{{ __('إعادة تعيين') }}"><i class="bi bi-x-lg"></i></a>
             @endif
         </div>
     </div>
@@ -74,20 +74,20 @@
     @if($shares->isEmpty())
         <div class="text-center py-4 text-secondary">
             <i class="bi bi-inbox display-6"></i>
-            <p class="mt-2 mb-3">لا توجد ملفات مطابقة.</p>
-            <a class="btn btn-accent btn-sm" href="{{ route('shares.create') }}">ارفع أول ملف</a>
+            <p class="mt-2 mb-3">{{ __('لا توجد ملفات مطابقة.') }}</p>
+            <a class="btn btn-accent btn-sm" href="{{ route('shares.create') }}">{{ __('ارفع أول ملف') }}</a>
         </div>
     @else
         <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>الملف</th>
-                        <th>النوع</th>
-                        <th>الحجم</th>
-                        <th>التنزيلات</th>
-                        <th>الصلاحية</th>
-                        <th class="text-end">إجراءات</th>
+                        <th>{{ __('الملف') }}</th>
+                        <th>{{ __('النوع') }}</th>
+                        <th>{{ __('الحجم') }}</th>
+                        <th>{{ __('التنزيلات') }}</th>
+                        <th>{{ __('الصلاحية') }}</th>
+                        <th class="text-end">{{ __('إجراءات') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,30 +102,30 @@
                                 {{ $s->title ?: $s->original_name }}
                             </a>
                             @if($s->password_hash)
-                                <i class="bi bi-lock-fill text-secondary small" title="محمي بكلمة مرور"></i>
+                                <i class="bi bi-lock-fill text-secondary small" title="{{ __('محمي بكلمة مرور') }}"></i>
                             @endif
                             <div class="small text-secondary">{{ $s->original_name }}</div>
                         </td>
-                        <td><span class="badge text-bg-light">{{ $categories[$s->category] ?? 'أخرى' }}</span></td>
+                        <td><span class="badge text-bg-light">{{ __($categories[$s->category] ?? 'أخرى') }}</span></td>
                         <td class="small">{{ \App\Services\ToolCatalog::formatBytes($s->size) }}</td>
                         <td>{{ $s->downloads }}</td>
                         <td class="small" dir="ltr">
-                            {{ $isExp ? 'منتهي' : ($s->expires_at?->format('Y-m-d H:i') ?? 'دائم') }}
+                            {{ $isExp ? __('منتهي') : ($s->expires_at?->format('Y-m-d H:i') ?? __('دائم')) }}
                         </td>
                         <td class="text-end text-nowrap">
-                            <button type="button" class="btn btn-light btn-sm" data-copy="{{ $link }}" title="نسخ الرابط">
+                            <button type="button" class="btn btn-light btn-sm" data-copy="{{ $link }}" title="{{ __('نسخ الرابط') }}">
                                 <i class="bi bi-clipboard"></i>
                             </button>
-                            <a class="btn btn-light btn-sm" href="{{ route('shares.show', $s->token) }}" title="عرض و QR">
+                            <a class="btn btn-light btn-sm" href="{{ route('shares.show', $s->token) }}" title="{{ __('عرض و QR') }}">
                                 <i class="bi bi-qr-code"></i>
                             </a>
-                            <a class="btn btn-light btn-sm" href="{{ route('shares.edit', $s->id) }}" title="تعديل">
+                            <a class="btn btn-light btn-sm" href="{{ route('shares.edit', $s->id) }}" title="{{ __('تعديل') }}">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <form method="post" action="{{ route('shares.destroy', $s->id) }}" class="d-inline" data-confirm="حذف هذا الملف ورابطه نهائياً؟">
+                            <form method="post" action="{{ route('shares.destroy', $s->id) }}" class="d-inline" data-confirm="{{ __('حذف هذا الملف ورابطه نهائياً؟') }}">
                                 @csrf
                                 @method('DELETE')
-                                <button class="btn btn-light btn-sm text-danger" title="حذف"><i class="bi bi-trash"></i></button>
+                                <button class="btn btn-light btn-sm text-danger" title="{{ __('حذف') }}"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
                     </tr>
@@ -139,11 +139,11 @@
 @if($history->isNotEmpty())
     <div class="panel">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history text-accent"></i> آخر 10 عمليات</h2>
-            <form method="post" action="{{ route('history.clear') }}" data-confirm="مسح سجل العمليات؟">
+            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history text-accent"></i> {{ __('آخر 10 عمليات') }}</h2>
+            <form method="post" action="{{ route('history.clear') }}" data-confirm="{{ __('مسح سجل العمليات؟') }}">
                 @csrf
                 @method('DELETE')
-                <button class="btn btn-light btn-sm text-danger">مسح السجل</button>
+                <button class="btn btn-light btn-sm text-danger">{{ __('مسح السجل') }}</button>
             </form>
         </div>
         <ul class="list-group list-group-flush">
@@ -162,4 +162,3 @@
     </div>
 @endif
 @endsection
-

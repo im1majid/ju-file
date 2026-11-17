@@ -484,3 +484,21 @@ main { flex: 1; }
 .trim-handle:hover, .trim-handle:active {
     transform: translate(-50%, -50%) scale(1.15);
 }
+
+/* زر تغيير اللغة وعكس الأيقونات الاتجاهية في LTR */
+.lang-toggle {
+    height: 31px;
+    padding: 0 .6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-weight: 600;
+    font-size: .8rem;
+}
+[dir="ltr"] .icon-directional {
+    display: inline-block;
+    transform: scaleX(-1);
+}
+[dir="ltr"] .cat-card:hover .icon-directional {
+    transform: scaleX(-1) translateX(-4px);
+}

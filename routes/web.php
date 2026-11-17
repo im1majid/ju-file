@@ -6,7 +6,15 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\ToolController;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Route;
+
+// تبديل اللغة (العربية / الإنجليزية)
+Route::get('/lang/{locale}', function (string $locale) {
+    session(['locale' => $locale]);
+    Cookie::queue('ju_locale', $locale, 60 * 24 * 365);
+    return redirect()->back(fallback: route('home'));
+})->whereIn('locale', ['ar', 'en'])->name('locale.switch');
 
 // الصفحة الرئيسية
 Route::get('/', [HomeController::class, 'index'])->name('home');

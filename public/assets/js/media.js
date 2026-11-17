@@ -4,6 +4,12 @@
 window.JU_MEDIA = (() => {
     'use strict';
 
+    const tr = (k, fallback, vars = {}) => {
+        let s = (window.JU_I18N && window.JU_I18N[k]) || fallback;
+        for (const [vk, vv] of Object.entries(vars)) s = s.replace(`:${vk}`, vv);
+        return s;
+    };
+
     let ffmpeg = null;
 
     const MIMES = {
@@ -16,13 +22,13 @@ window.JU_MEDIA = (() => {
     async function ensureLoaded(onProgress) {
         if (ffmpeg?.loaded) return ffmpeg;
         if (!window.FFmpegWASM?.FFmpeg) {
-            throw new Error('مكتبة معالجة الوسائط لم تُحمّل.');
+            throw new Error(tr('ffmpegErr', 'مكتبة معالجة الوسائط لم تُحمّل.'));
         }
-        onProgress('جاري تهيئة محرك الوسائط (أول مرة فقط)...');
+        onProgress(tr('loadingFfmpeg', 'جاري تهيئة محرك الوسائط (أول مرة فقط)...'));
         ffmpeg = new window.FFmpegWASM.FFmpeg();
         ffmpeg.on('progress', ({ progress }) => {
             if (Number.isFinite(progress) && progress > 0 && progress <= 1) {
-                onProgress(`جاري المعالجة... ${Math.round(progress * 100)}%`);
+                onProgress(`${tr('processing', 'جاري المعالجة...')} ${Math.round(progress * 100)}%`);
             }
         });
         await ffmpeg.load({
@@ -44,7 +50,7 @@ window.JU_MEDIA = (() => {
         const base = file.name.replace(/\.[^.]+$/, '');
         const inName = `input.${ext}`;
 
-        onProgress('جاري قراءة الملف...');
+        onProgress(tr('readingFile', 'جاري قراءة الملف...'));
         await ff.writeFile(inName, new Uint8Array(await file.arrayBuffer()));
 
         let outExt = ext;
@@ -64,7 +70,7 @@ window.JU_MEDIA = (() => {
                 case 'trim': {
                     const start = Number(formData.get('start') || 0);
                     const end = Number(formData.get('end') || 0);
-                    if (!(end > start)) throw new Error('وقت النهاية يجب أن يكون أكبر من وقت البداية.');
+                    if (!(end > start)) throw new Error(tr('endGtStart', 'وقت النهاية يجب أن يكون أكبر من وقت البداية.'));
                     const fast = formData.get('fast') === '1';
                     args = fast
                         ? ['-ss', String(start), '-to', String(end), '-i', inName, '-c', 'copy']
@@ -134,7 +140,7 @@ window.JU_MEDIA = (() => {
                 case 'trim': {
                     const start = Number(formData.get('start') || 0);
                     const end = Number(formData.get('end') || 0);
-                    if (!(end > start)) throw new Error('وقت النهاية يجب أن يكون أكبر من وقت البداية.');
+                    if (!(end > start)) throw new Error(tr('endGtStart', 'وقت النهاية يجب أن يكون أكبر من وقت البداية.'));
                     args = ['-ss', String(start), '-to', String(end), '-i', inName, '-c', 'copy'];
                     break;
                 }
@@ -149,11 +155,11 @@ window.JU_MEDIA = (() => {
         }
 
         const outName = `output.${outExt}`;
-        onProgress('جاري المعالجة...');
+        onProgress(tr('processing', 'جاري المعالجة...'));
         const code = await ff.exec([...args, outName]);
         if (code !== 0) {
             await ff.deleteFile(inName).catch(() => {});
-            throw new Error('تعذّرت معالجة الملف بهذه الإعدادات. جرّب صيغة أخرى أو ألغِ القص السريع.');
+            throw new Error(tr('mediaFailed', 'تعذّرت معالجة الملف بهذه الإعدادات. جرّب صيغة أخرى أو ألغِ القص السريع.'));
         }
 
         const data = await ff.readFile(outName);

@@ -39,8 +39,8 @@
                 <input type="{{ $field['type'] }}" class="form-control" id="{{ $id }}" name="{{ $name }}"
                        value="{{ $val }}" min="{{ $field['min'] ?? '' }}" max="{{ $field['max'] ?? '' }}"
                        step="{{ $field['step'] ?? 'any' }}" {{ $req }}>
-                <button type="button" class="btn btn-light" data-media-time="{{ $id }}" title="أخذ الوقت الحالي من المشغّل">
-                    <i class="bi bi-stopwatch"></i> الآن
+                <button type="button" class="btn btn-light" data-media-time="{{ $id }}" title="{{ __('أخذ الوقت الحالي من المشغّل') }}">
+                    <i class="bi bi-stopwatch"></i> {{ __('الآن') }}
                 </button>
             </div>
         @else

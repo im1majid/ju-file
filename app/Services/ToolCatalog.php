@@ -14,217 +14,217 @@ class ToolCatalog
         $audioExt = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus', 'wma'];
         $textExt  = ['txt', 'csv', 'json', 'md', 'html', 'xml', 'log', 'srt'];
 
-        $start = ['name' => 'start', 'label' => 'البداية (ثانية)', 'type' => 'number', 'min' => 0, 'step' => 0.1, 'value' => 0, 'media_time' => true];
-        $end   = ['name' => 'end', 'label' => 'النهاية (ثانية)', 'type' => 'number', 'min' => 0.1, 'step' => 0.1, 'value' => null, 'media_time' => true];
+        $start = ['name' => 'start', 'label' => __('البداية (ثانية)'), 'type' => 'number', 'min' => 0, 'step' => 0.1, 'value' => 0, 'media_time' => true];
+        $end   = ['name' => 'end', 'label' => __('النهاية (ثانية)'), 'type' => 'number', 'min' => 0.1, 'step' => 0.1, 'value' => null, 'media_time' => true];
 
         return [
             'image' => [
-                'title' => 'الصور', 'icon' => 'bi-image', 'route' => 'tools.category',
-                'desc'  => 'صغّر حجم صورك، غيّر أبعادها، قصّها، دوّرها، أو حوّل صيغتها.',
+                'title' => __('الصور'), 'icon' => 'bi-image', 'route' => 'tools.category',
+                'desc'  => __('صغّر حجم صورك، غيّر أبعادها، قصّها، دوّرها، أو حوّل صيغتها.'),
                 'tools' => [
                     'compress' => [
-                        'title' => 'تصغير حجم الصورة', 'icon' => 'bi-arrows-collapse', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => 'قلّل حجم الصورة مع الحفاظ على جودة ممتازة.',
+                        'title' => __('تصغير حجم الصورة'), 'icon' => 'bi-arrows-collapse', 'engine' => 'server', 'accept' => $imageExt,
+                        'desc' => __('قلّل حجم الصورة مع الحفاظ على جودة ممتازة.'),
                         'fields' => [
-                            ['name' => 'quality', 'label' => 'الجودة', 'type' => 'range', 'min' => 10, 'max' => 95, 'value' => 70, 'suffix' => '%'],
-                            ['name' => 'format', 'label' => 'صيغة الناتج', 'type' => 'select', 'value' => 'keep', 'options' => ['keep' => 'نفس الصيغة', 'jpg' => 'JPG', 'webp' => 'WebP (الأصغر)']],
-                            ['name' => 'max_width', 'label' => 'أقصى عرض بالبكسل (اختياري)', 'type' => 'number', 'min' => 16, 'max' => 10000, 'required' => false, 'placeholder' => 'بدون تغيير'],
+                            ['name' => 'quality', 'label' => __('الجودة'), 'type' => 'range', 'min' => 10, 'max' => 95, 'value' => 70, 'suffix' => '%'],
+                            ['name' => 'format', 'label' => __('صيغة الناتج'), 'type' => 'select', 'value' => 'keep', 'options' => ['keep' => __('نفس الصيغة'), 'jpg' => 'JPG', 'webp' => __('WebP (الأصغر)')]],
+                            ['name' => 'max_width', 'label' => __('أقصى عرض بالبكسل (اختياري)'), 'type' => 'number', 'min' => 16, 'max' => 10000, 'required' => false, 'placeholder' => __('بدون تغيير')],
                         ],
                     ],
                     'resize' => [
-                        'title' => 'تغيير مقاس الصورة', 'icon' => 'bi-aspect-ratio', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => 'حدّد العرض أو الارتفاع الجديد بالبكسل.',
+                        'title' => __('تغيير مقاس الصورة'), 'icon' => 'bi-aspect-ratio', 'engine' => 'server', 'accept' => $imageExt,
+                        'desc' => __('حدّد العرض أو الارتفاع الجديد بالبكسل.'),
                         'fields' => [
-                            ['name' => 'width', 'label' => 'العرض (px)', 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
-                            ['name' => 'height', 'label' => 'الارتفاع (px)', 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
-                            ['name' => 'keep_ratio', 'label' => 'حافظ على تناسب الأبعاد', 'type' => 'checkbox', 'value' => true],
+                            ['name' => 'width', 'label' => __('العرض (px)'), 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
+                            ['name' => 'height', 'label' => __('الارتفاع (px)'), 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
+                            ['name' => 'keep_ratio', 'label' => __('حافظ على تناسب الأبعاد'), 'type' => 'checkbox', 'value' => true],
                         ],
                     ],
                     'crop' => [
-                        'title' => 'قص الصورة', 'icon' => 'bi-crop', 'engine' => 'server', 'accept' => $imageExt, 'crop_ui' => true,
-                        'desc' => 'اسحب على الصورة لتحديد الجزء المطلوب قصّه.',
+                        'title' => __('قص الصورة'), 'icon' => 'bi-crop', 'engine' => 'server', 'accept' => $imageExt, 'crop_ui' => true,
+                        'desc' => __('اسحب على الصورة لتحديد الجزء المطلوب قصّه.'),
                         'fields' => [
-                            ['name' => 'x', 'label' => 'من اليسار X', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
-                            ['name' => 'y', 'label' => 'من الأعلى Y', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
-                            ['name' => 'width', 'label' => 'العرض', 'type' => 'number', 'min' => 1, 'max' => 20000],
-                            ['name' => 'height', 'label' => 'الارتفاع', 'type' => 'number', 'min' => 1, 'max' => 20000],
+                            ['name' => 'x', 'label' => __('من اليسار X'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'y', 'label' => __('من الأعلى Y'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'width', 'label' => __('العرض'), 'type' => 'number', 'min' => 1, 'max' => 20000],
+                            ['name' => 'height', 'label' => __('الارتفاع'), 'type' => 'number', 'min' => 1, 'max' => 20000],
                         ],
                     ],
                     'rotate' => [
-                        'title' => 'تدوير وقلب الصورة', 'icon' => 'bi-arrow-clockwise', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => 'دوّر الصورة 90° أو 180° أو اقلبها أفقياً وعمودياً.',
+                        'title' => __('تدوير وقلب الصورة'), 'icon' => 'bi-arrow-clockwise', 'engine' => 'server', 'accept' => $imageExt,
+                        'desc' => __('دوّر الصورة 90° أو 180° أو اقلبها أفقياً وعمودياً.'),
                         'fields' => [
-                            ['name' => 'angle', 'label' => 'التدوير', 'type' => 'select', 'value' => '90', 'options' => ['0' => 'بدون', '90' => '90° مع عقارب الساعة', '180' => '180°', '270' => '90° عكس عقارب الساعة']],
-                            ['name' => 'flip', 'label' => 'القلب', 'type' => 'select', 'value' => 'none', 'options' => ['none' => 'بدون', 'h' => 'أفقي (مرآة)', 'v' => 'عمودي']],
+                            ['name' => 'angle', 'label' => __('التدوير'), 'type' => 'select', 'value' => '90', 'options' => ['0' => __('بدون'), '90' => __('90° مع عقارب الساعة'), '180' => '180°', '270' => __('90° عكس عقارب الساعة')]],
+                            ['name' => 'flip', 'label' => __('القلب'), 'type' => 'select', 'value' => 'none', 'options' => ['none' => __('بدون'), 'h' => __('أفقي (مرآة)'), 'v' => __('عمودي')]],
                         ],
                     ],
                     'convert' => [
-                        'title' => 'تحويل صيغة الصورة', 'icon' => 'bi-arrow-left-right', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => 'حوّل بين JPG و PNG و WebP و GIF و BMP.',
+                        'title' => __('تحويل صيغة الصورة'), 'icon' => 'bi-arrow-left-right', 'engine' => 'server', 'accept' => $imageExt,
+                        'desc' => __('حوّل بين JPG و PNG و WebP و GIF و BMP.'),
                         'fields' => [
-                            ['name' => 'format', 'label' => 'الصيغة الجديدة', 'type' => 'select', 'value' => 'png', 'options' => ['jpg' => 'JPG', 'png' => 'PNG', 'webp' => 'WebP', 'gif' => 'GIF', 'bmp' => 'BMP']],
+                            ['name' => 'format', 'label' => __('الصيغة الجديدة'), 'type' => 'select', 'value' => 'png', 'options' => ['jpg' => 'JPG', 'png' => 'PNG', 'webp' => 'WebP', 'gif' => 'GIF', 'bmp' => 'BMP']],
                         ],
                     ],
                     'filter' => [
-                        'title' => 'فلاتر وتأثيرات لونية', 'icon' => 'bi-magic', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => 'أبيض وأسود، سيبيا، تمويه، وزيادة الحدة أو الإضاءة.',
+                        'title' => __('فلاتر وتأثيرات لونية'), 'icon' => 'bi-magic', 'engine' => 'server', 'accept' => $imageExt,
+                        'desc' => __('أبيض وأسود، سيبيا، تمويه، وزيادة الحدة أو الإضاءة.'),
                         'fields' => [
-                            ['name' => 'effect', 'label' => 'التأثير', 'type' => 'select', 'value' => 'grayscale', 'options' => ['grayscale' => 'أبيض وأسود', 'sepia' => 'سيبيا (قديم)', 'negate' => 'عكس الألوان', 'blur' => 'تمويه', 'sharpen' => 'زيادة الحدة', 'brighten' => 'زيادة الإضاءة']],
+                            ['name' => 'effect', 'label' => __('التأثير'), 'type' => 'select', 'value' => 'grayscale', 'options' => ['grayscale' => __('أبيض وأسود'), 'sepia' => __('سيبيا (قديم)'), 'negate' => __('عكس الألوان'), 'blur' => __('تمويه'), 'sharpen' => __('زيادة الحدة'), 'brighten' => __('زيادة الإضاءة')]],
                         ],
                     ],
                 ],
             ],
 
             'video' => [
-                'title' => 'الفيديو', 'icon' => 'bi-camera-video', 'route' => 'tools.category',
-                'desc'  => 'صغّر حجم الفيديو، قصّ جزءاً منه، اضبط أبعاده، أو حوّل صيغته — داخل متصفحك.',
+                'title' => __('الفيديو'), 'icon' => 'bi-camera-video', 'route' => 'tools.category',
+                'desc'  => __('صغّر حجم الفيديو، قصّ جزءاً منه، اضبط أبعاده، أو حوّل صيغته — داخل متصفحك.'),
                 'tools' => [
                     'compress' => [
-                        'title' => 'ضغط وتصغير الفيديو', 'icon' => 'bi-arrows-collapse', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'ضغط الفيديو إلى MP4 بحجم أصغر.',
+                        'title' => __('ضغط وتصغير الفيديو'), 'icon' => 'bi-arrows-collapse', 'engine' => 'ffmpeg', 'accept' => $videoExt,
+                        'desc' => __('ضغط الفيديو إلى MP4 بحجم أصغر.'),
                         'fields' => [
-                            ['name' => 'quality', 'label' => 'مستوى الضغط', 'type' => 'select', 'value' => '28', 'options' => ['23' => 'خفيف (جودة عالية)', '28' => 'متوسط (موصى به)', '33' => 'قوي (أصغر حجم)']],
-                            ['name' => 'max_height', 'label' => 'أقصى دقة', 'type' => 'select', 'value' => '720', 'options' => ['0' => 'بدون تغيير', '1080' => '1080p', '720' => '720p', '480' => '480p', '360' => '360p']],
+                            ['name' => 'quality', 'label' => __('مستوى الضغط'), 'type' => 'select', 'value' => '28', 'options' => ['23' => __('خفيف (جودة عالية)'), '28' => __('متوسط (موصى به)'), '33' => __('قوي (أصغر حجم)')]],
+                            ['name' => 'max_height', 'label' => __('أقصى دقة'), 'type' => 'select', 'value' => '720', 'options' => ['0' => __('بدون تغيير'), '1080' => '1080p', '720' => '720p', '480' => '480p', '360' => '360p']],
                         ],
                     ],
                     'trim' => [
-                        'title' => 'قص جزء من الفيديو', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'trim_ui' => true,
-                        'desc' => 'اسحب مقبضي البداية والنهاية لتحديد المقطع المطلوب.',
-                        'fields' => [$start, $end, ['name' => 'fast', 'label' => 'قص سريع بدون إعادة ترميز (أقل دقة)', 'type' => 'checkbox', 'value' => true]],
+                        'title' => __('قص جزء من الفيديو'), 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'trim_ui' => true,
+                        'desc' => __('اسحب مقبضي البداية والنهاية لتحديد المقطع المطلوب.'),
+                        'fields' => [$start, $end, ['name' => 'fast', 'label' => __('قص سريع بدون إعادة ترميز (أقل دقة)'), 'type' => 'checkbox', 'value' => true]],
                     ],
                     'crop' => [
-                        'title' => 'قص أبعاد الفيديو', 'icon' => 'bi-crop', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'crop_ui' => true,
-                        'desc' => 'اسحب على الفيديو لتحديد الإطار المطلوب قصّه أو اختر نسبة جاهزة.',
+                        'title' => __('قص أبعاد الفيديو'), 'icon' => 'bi-crop', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'crop_ui' => true,
+                        'desc' => __('اسحب على الفيديو لتحديد الإطار المطلوب قصّه أو اختر نسبة جاهزة.'),
                         'fields' => [
-                            ['name' => 'x', 'label' => 'من اليسار X', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
-                            ['name' => 'y', 'label' => 'من الأعلى Y', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
-                            ['name' => 'width', 'label' => 'العرض', 'type' => 'number', 'min' => 2, 'max' => 20000],
-                            ['name' => 'height', 'label' => 'الارتفاع', 'type' => 'number', 'min' => 2, 'max' => 20000],
+                            ['name' => 'x', 'label' => __('من اليسار X'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'y', 'label' => __('من الأعلى Y'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'width', 'label' => __('العرض'), 'type' => 'number', 'min' => 2, 'max' => 20000],
+                            ['name' => 'height', 'label' => __('الارتفاع'), 'type' => 'number', 'min' => 2, 'max' => 20000],
                         ],
                     ],
                     'convert' => [
-                        'title' => 'تحويل صيغة الفيديو', 'icon' => 'bi-arrow-left-right', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'MP4، WebM، MOV، MKV، AVI أو GIF متحرك.',
+                        'title' => __('تحويل صيغة الفيديو'), 'icon' => 'bi-arrow-left-right', 'engine' => 'ffmpeg', 'accept' => $videoExt,
+                        'desc' => __('MP4، WebM، MOV، MKV، AVI أو GIF متحرك.'),
                         'fields' => [
-                            ['name' => 'format', 'label' => 'الصيغة الجديدة', 'type' => 'select', 'value' => 'mp4', 'options' => ['mp4' => 'MP4', 'webm' => 'WebM', 'mov' => 'MOV', 'mkv' => 'MKV', 'avi' => 'AVI', 'gif' => 'GIF متحرك (أول 15 ثانية)']],
+                            ['name' => 'format', 'label' => __('الصيغة الجديدة'), 'type' => 'select', 'value' => 'mp4', 'options' => ['mp4' => 'MP4', 'webm' => 'WebM', 'mov' => 'MOV', 'mkv' => 'MKV', 'avi' => 'AVI', 'gif' => __('GIF متحرك (أول 15 ثانية)')]],
                         ],
                     ],
                     'extract_audio' => [
-                        'title' => 'استخراج الصوت فقط', 'icon' => 'bi-music-note', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'احفظ صوت الفيديو كملف صوتي مستقل.',
+                        'title' => __('استخراج الصوت فقط'), 'icon' => 'bi-music-note', 'engine' => 'ffmpeg', 'accept' => $videoExt,
+                        'desc' => __('احفظ صوت الفيديو كملف صوتي مستقل.'),
                         'fields' => [
-                            ['name' => 'format', 'label' => 'صيغة الصوت', 'type' => 'select', 'value' => 'mp3', 'options' => ['mp3' => 'MP3', 'wav' => 'WAV', 'm4a' => 'M4A']],
+                            ['name' => 'format', 'label' => __('صيغة الصوت'), 'type' => 'select', 'value' => 'mp3', 'options' => ['mp3' => 'MP3', 'wav' => 'WAV', 'm4a' => 'M4A']],
                         ],
                     ],
                     'mute' => [
-                        'title' => 'إزالة الصوت من الفيديو', 'icon' => 'bi-volume-mute', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'احذف المسار الصوتي واجعل الفيديو صامتاً.', 'fields' => [],
+                        'title' => __('إزالة الصوت من الفيديو'), 'icon' => 'bi-volume-mute', 'engine' => 'ffmpeg', 'accept' => $videoExt,
+                        'desc' => __('احذف المسار الصوتي واجعل الفيديو صامتاً.'), 'fields' => [],
                     ],
                 ],
             ],
 
             'audio' => [
-                'title' => 'الصوت', 'icon' => 'bi-music-note-beamed', 'route' => 'tools.category',
-                'desc'  => 'حوّل صيغة ملفاتك الصوتية، صغّر حجمها، قصّها أو عدّل مستوى الصوت.',
+                'title' => __('الصوت'), 'icon' => 'bi-music-note-beamed', 'route' => 'tools.category',
+                'desc'  => __('حوّل صيغة ملفاتك الصوتية، صغّر حجمها، قصّها أو عدّل مستوى الصوت.'),
                 'tools' => [
                     'convert' => [
-                        'title' => 'تحويل صيغة الصوت', 'icon' => 'bi-arrow-left-right', 'engine' => 'ffmpeg', 'accept' => $audioExt,
-                        'desc' => 'MP3، WAV، OGG، M4A أو FLAC.',
+                        'title' => __('تحويل صيغة الصوت'), 'icon' => 'bi-arrow-left-right', 'engine' => 'ffmpeg', 'accept' => $audioExt,
+                        'desc' => __('MP3، WAV، OGG، M4A أو FLAC.'),
                         'fields' => [
-                            ['name' => 'format', 'label' => 'الصيغة الجديدة', 'type' => 'select', 'value' => 'mp3', 'options' => ['mp3' => 'MP3', 'wav' => 'WAV', 'ogg' => 'OGG', 'm4a' => 'M4A', 'flac' => 'FLAC']],
+                            ['name' => 'format', 'label' => __('الصيغة الجديدة'), 'type' => 'select', 'value' => 'mp3', 'options' => ['mp3' => 'MP3', 'wav' => 'WAV', 'ogg' => 'OGG', 'm4a' => 'M4A', 'flac' => 'FLAC']],
                         ],
                     ],
                     'compress' => [
-                        'title' => 'ضغط وتصغير الصوت', 'icon' => 'bi-arrows-collapse', 'engine' => 'ffmpeg', 'accept' => $audioExt,
-                        'desc' => 'خفّض معدل البت للحصول على ملف MP3 أصغر.',
+                        'title' => __('ضغط وتصغير الصوت'), 'icon' => 'bi-arrows-collapse', 'engine' => 'ffmpeg', 'accept' => $audioExt,
+                        'desc' => __('خفّض معدل البت للحصول على ملف MP3 أصغر.'),
                         'fields' => [
-                            ['name' => 'bitrate', 'label' => 'معدل البت', 'type' => 'select', 'value' => '96', 'options' => ['128' => '128k (جيد)', '96' => '96k (متوسط)', '64' => '64k (صغير)', '32' => '32k (صوت كلام)']],
-                            ['name' => 'mono', 'label' => 'تحويل إلى أحادي (Mono)', 'type' => 'checkbox', 'value' => false],
+                            ['name' => 'bitrate', 'label' => __('معدل البت'), 'type' => 'select', 'value' => '96', 'options' => ['128' => __('128k (جيد)'), '96' => __('96k (متوسط)'), '64' => __('64k (صغير)'), '32' => __('32k (صوت كلام)')]],
+                            ['name' => 'mono', 'label' => __('تحويل إلى أحادي (Mono)'), 'type' => 'checkbox', 'value' => false],
                         ],
                     ],
                     'trim' => [
-                        'title' => 'قص مقطع صوتي', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $audioExt, 'trim_ui' => true,
-                        'desc' => 'اسحب مقبضي البداية والنهاية لتحديد المقطع الصوتي.', 'fields' => [$start, $end],
+                        'title' => __('قص مقطع صوتي'), 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $audioExt, 'trim_ui' => true,
+                        'desc' => __('اسحب مقبضي البداية والنهاية لتحديد المقطع الصوتي.'), 'fields' => [$start, $end],
                     ],
                     'volume' => [
-                        'title' => 'رفع أو خفض الصوت', 'icon' => 'bi-volume-up', 'engine' => 'ffmpeg', 'accept' => $audioExt,
-                        'desc' => 'ارفع أو اخفض مستوى الصوت، أو وازنه تلقائياً.',
+                        'title' => __('رفع أو خفض الصوت'), 'icon' => 'bi-volume-up', 'engine' => 'ffmpeg', 'accept' => $audioExt,
+                        'desc' => __('ارفع أو اخفض مستوى الصوت، أو وازنه تلقائياً.'),
                         'fields' => [
-                            ['name' => 'level', 'label' => 'المستوى', 'type' => 'select', 'value' => '1.5', 'options' => ['0.5' => '50%', '0.75' => '75%', '1.25' => '125%', '1.5' => '150%', '2' => '200%', 'normalize' => 'موازنة تلقائية']],
+                            ['name' => 'level', 'label' => __('المستوى'), 'type' => 'select', 'value' => '1.5', 'options' => ['0.5' => '50%', '0.75' => '75%', '1.25' => '125%', '1.5' => '150%', '2' => '200%', 'normalize' => __('موازنة تلقائية')]],
                         ],
                     ],
                 ],
             ],
 
             'document' => [
-                'title' => 'المستندات', 'icon' => 'bi-file-earmark-text', 'route' => 'tools.category',
-                'desc'  => 'أدوات PDF، تحويل الملفات النصية، تنظيفها، وضغط الملفات في ZIP.',
+                'title' => __('المستندات'), 'icon' => 'bi-file-earmark-text', 'route' => 'tools.category',
+                'desc'  => __('أدوات PDF، تحويل الملفات النصية، تنظيفها، وضغط الملفات في ZIP.'),
                 'tools' => [
                     'pdf_merge' => [
-                        'title' => 'دمج ملفات PDF', 'icon' => 'bi-union', 'engine' => 'pdf', 'accept' => ['pdf'], 'multi' => true,
-                        'desc' => 'اجمع عدة ملفات PDF في ملف واحد بالترتيب.', 'fields' => [],
+                        'title' => __('دمج ملفات PDF'), 'icon' => 'bi-union', 'engine' => 'pdf', 'accept' => ['pdf'], 'multi' => true,
+                        'desc' => __('اجمع عدة ملفات PDF في ملف واحد بالترتيب.'), 'fields' => [],
                     ],
                     'pdf_extract' => [
-                        'title' => 'استخراج صفحات PDF', 'icon' => 'bi-file-earmark-break', 'engine' => 'pdf', 'accept' => ['pdf'],
-                        'desc' => 'أنشئ ملف PDF جديداً من صفحات محددة.',
-                        'fields' => [['name' => 'pages', 'label' => 'الصفحات (مثال: 1-3,5)', 'type' => 'text', 'placeholder' => '1-3,5']],
+                        'title' => __('استخراج صفحات PDF'), 'icon' => 'bi-file-earmark-break', 'engine' => 'pdf', 'accept' => ['pdf'],
+                        'desc' => __('أنشئ ملف PDF جديداً من صفحات محددة.'),
+                        'fields' => [['name' => 'pages', 'label' => __('الصفحات (مثال: 1-3,5)'), 'type' => 'text', 'placeholder' => '1-3,5']],
                     ],
                     'pdf_delete' => [
-                        'title' => 'حذف صفحات من PDF', 'icon' => 'bi-file-earmark-x', 'engine' => 'pdf', 'accept' => ['pdf'],
-                        'desc' => 'احذف صفحات لا تحتاجها من ملف PDF.',
-                        'fields' => [['name' => 'pages', 'label' => 'الصفحات المحذوفة (مثال: 2,4-6)', 'type' => 'text', 'placeholder' => '2,4-6']],
+                        'title' => __('حذف صفحات من PDF'), 'icon' => 'bi-file-earmark-x', 'engine' => 'pdf', 'accept' => ['pdf'],
+                        'desc' => __('احذف صفحات لا تحتاجها من ملف PDF.'),
+                        'fields' => [['name' => 'pages', 'label' => __('الصفحات المحذوفة (مثال: 2,4-6)'), 'type' => 'text', 'placeholder' => '2,4-6']],
                     ],
                     'pdf_rotate' => [
-                        'title' => 'تدوير صفحات PDF', 'icon' => 'bi-arrow-clockwise', 'engine' => 'pdf', 'accept' => ['pdf'],
-                        'desc' => 'دوّر كل الصفحات أو صفحات محددة.',
+                        'title' => __('تدوير صفحات PDF'), 'icon' => 'bi-arrow-clockwise', 'engine' => 'pdf', 'accept' => ['pdf'],
+                        'desc' => __('دوّر كل الصفحات أو صفحات محددة.'),
                         'fields' => [
-                            ['name' => 'angle', 'label' => 'الزاوية', 'type' => 'select', 'value' => '90', 'options' => ['90' => '90°', '180' => '180°', '270' => '270°']],
-                            ['name' => 'pages', 'label' => 'الصفحات (فارغ = الكل)', 'type' => 'text', 'required' => false, 'placeholder' => 'الكل'],
+                            ['name' => 'angle', 'label' => __('الزاوية'), 'type' => 'select', 'value' => '90', 'options' => ['90' => '90°', '180' => '180°', '270' => '270°']],
+                            ['name' => 'pages', 'label' => __('الصفحات (فارغ = الكل)'), 'type' => 'text', 'required' => false, 'placeholder' => __('الكل')],
                         ],
                     ],
                     'images_pdf' => [
-                        'title' => 'تحويل الصور إلى PDF', 'icon' => 'bi-images', 'engine' => 'pdf', 'accept' => $imageExt, 'multi' => true,
-                        'desc' => 'اجمع صورة أو أكثر في ملف PDF واحد.',
-                        'fields' => [['name' => 'size', 'label' => 'حجم الصفحة', 'type' => 'select', 'value' => 'a4', 'options' => ['a4' => 'A4', 'fit' => 'بحجم الصورة']]],
+                        'title' => __('تحويل الصور إلى PDF'), 'icon' => 'bi-images', 'engine' => 'pdf', 'accept' => $imageExt, 'multi' => true,
+                        'desc' => __('اجمع صورة أو أكثر في ملف PDF واحد.'),
+                        'fields' => [['name' => 'size', 'label' => __('حجم الصفحة'), 'type' => 'select', 'value' => 'a4', 'options' => ['a4' => 'A4', 'fit' => __('بحجم الصورة')]]],
                     ],
                     'text_convert' => [
-                        'title' => 'تحويل صيغ النصوص (CSV/JSON)', 'icon' => 'bi-filetype-json', 'engine' => 'server', 'accept' => $textExt,
-                        'desc' => 'CSV ⇄ JSON، نص إلى HTML، وتنسيق JSON.',
-                        'fields' => [['name' => 'mode', 'label' => 'التحويل', 'type' => 'select', 'value' => 'csv_json', 'options' => [
-                            'csv_json' => 'CSV ← إلى JSON', 'json_csv' => 'JSON ← إلى CSV', 'txt_html' => 'نص ← إلى HTML', 'json_pretty' => 'تنسيق JSON (مقروء)', 'json_minify' => 'تصغير JSON',
+                        'title' => __('تحويل صيغ النصوص (CSV/JSON)'), 'icon' => 'bi-filetype-json', 'engine' => 'server', 'accept' => $textExt,
+                        'desc' => __('CSV ⇄ JSON، نص إلى HTML، وتنسيق JSON.'),
+                        'fields' => [['name' => 'mode', 'label' => __('التحويل'), 'type' => 'select', 'value' => 'csv_json', 'options' => [
+                            'csv_json' => __('CSV ← إلى JSON'), 'json_csv' => __('JSON ← إلى CSV'), 'txt_html' => __('نص ← إلى HTML'), 'json_pretty' => __('تنسيق JSON (مقروء)'), 'json_minify' => __('تصغير JSON'),
                         ]]],
                     ],
                     'text_clean' => [
-                        'title' => 'تنظيف وترتيب النصوص', 'icon' => 'bi-stars', 'engine' => 'server', 'accept' => $textExt,
-                        'desc' => 'حذف الفراغات الزائدة، الأسطر الفارغة، الترتيب والتكرار.',
-                        'fields' => [['name' => 'action', 'label' => 'العملية', 'type' => 'select', 'value' => 'spaces', 'options' => [
-                            'spaces' => 'حذف الفراغات الزائدة', 'empty_lines' => 'حذف الأسطر الفارغة', 'unique' => 'حذف الأسطر المكررة', 'sort' => 'ترتيب الأسطر أبجدياً', 'upper' => 'أحرف إنجليزية كبيرة', 'lower' => 'أحرف إنجليزية صغيرة',
+                        'title' => __('تنظيف وترتيب النصوص'), 'icon' => 'bi-stars', 'engine' => 'server', 'accept' => $textExt,
+                        'desc' => __('حذف الفراغات الزائدة، الأسطر الفارغة، الترتيب والتكرار.'),
+                        'fields' => [['name' => 'action', 'label' => __('العملية'), 'type' => 'select', 'value' => 'spaces', 'options' => [
+                            'spaces' => __('حذف الفراغات الزائدة'), 'empty_lines' => __('حذف الأسطر الفارغة'), 'unique' => __('حذف الأسطر المكررة'), 'sort' => __('ترتيب الأسطر أبجدياً'), 'upper' => __('أحرف إنجليزية كبيرة'), 'lower' => __('أحرف إنجليزية صغيرة'),
                         ]]],
                     ],
                     'text_replace' => [
-                        'title' => 'بحث واستبدال في النص', 'icon' => 'bi-search', 'engine' => 'server', 'accept' => $textExt,
-                        'desc' => 'استبدل كلمة أو عبارة في كامل الملف.',
+                        'title' => __('بحث واستبدال في النص'), 'icon' => 'bi-search', 'engine' => 'server', 'accept' => $textExt,
+                        'desc' => __('استبدل كلمة أو عبارة في كامل الملف.'),
                         'fields' => [
-                            ['name' => 'find', 'label' => 'ابحث عن', 'type' => 'text', 'maxlength' => 500],
-                            ['name' => 'replace', 'label' => 'استبدل بـ', 'type' => 'text', 'required' => false, 'maxlength' => 500],
-                            ['name' => 'case_sensitive', 'label' => 'مطابقة حالة الأحرف', 'type' => 'checkbox', 'value' => false],
+                            ['name' => 'find', 'label' => __('ابحث عن'), 'type' => 'text', 'maxlength' => 500],
+                            ['name' => 'replace', 'label' => __('استبدل بـ'), 'type' => 'text', 'required' => false, 'maxlength' => 500],
+                            ['name' => 'case_sensitive', 'label' => __('مطابقة حالة الأحرف'), 'type' => 'checkbox', 'value' => false],
                         ],
                     ],
                     'text_encoding' => [
-                        'title' => 'إصلاح حروف العربي المشوّهة', 'icon' => 'bi-translate', 'engine' => 'server', 'accept' => $textExt,
-                        'desc' => 'حوّل الملفات ذات الترميز القديم إلى UTF-8 مقروء.',
-                        'fields' => [['name' => 'from', 'label' => 'الترميز الأصلي', 'type' => 'select', 'value' => 'auto', 'options' => [
-                            'auto' => 'تلقائي', 'CP1256' => 'Windows-1256 (عربي)', 'ISO-8859-6' => 'ISO-8859-6 (عربي)', 'UTF-16' => 'UTF-16', 'CP1252' => 'Windows-1252 (لاتيني)',
+                        'title' => __('إصلاح حروف العربي المشوّهة'), 'icon' => 'bi-translate', 'engine' => 'server', 'accept' => $textExt,
+                        'desc' => __('حوّل الملفات ذات الترميز القديم إلى UTF-8 مقروء.'),
+                        'fields' => [['name' => 'from', 'label' => __('الترميز الأصلي'), 'type' => 'select', 'value' => 'auto', 'options' => [
+                            'auto' => __('تلقائي'), 'CP1256' => __('Windows-1256 (عربي)'), 'ISO-8859-6' => __('ISO-8859-6 (عربي)'), 'UTF-16' => 'UTF-16', 'CP1252' => __('Windows-1252 (لاتيني)'),
                         ]]],
                     ],
                     'text_stats' => [
-                        'title' => 'عدّ الكلمات والأحرف', 'icon' => 'bi-bar-chart', 'engine' => 'server', 'accept' => $textExt,
-                        'desc' => 'إحصائيات الكلمات والأحرف والأسطر ووقت القراءة.', 'fields' => [],
+                        'title' => __('عدّ الكلمات والأحرف'), 'icon' => 'bi-bar-chart', 'engine' => 'server', 'accept' => $textExt,
+                        'desc' => __('إحصائيات الكلمات والأحرف والأسطر ووقت القراءة.'), 'fields' => [],
                     ],
                     'zip' => [
-                        'title' => 'ضغط الملفات في ZIP', 'icon' => 'bi-file-zip', 'engine' => 'server', 'accept' => [], 'multi' => true,
-                        'desc' => 'اجمع عدة ملفات في أرشيف ZIP واحد.',
-                        'fields' => [['name' => 'archive', 'label' => 'اسم الأرشيف', 'type' => 'text', 'required' => false, 'maxlength' => 80, 'placeholder' => 'files']],
+                        'title' => __('ضغط الملفات في ZIP'), 'icon' => 'bi-file-zip', 'engine' => 'server', 'accept' => [], 'multi' => true,
+                        'desc' => __('اجمع عدة ملفات في أرشيف ZIP واحد.'),
+                        'fields' => [['name' => 'archive', 'label' => __('اسم الأرشيف'), 'type' => 'text', 'required' => false, 'maxlength' => 80, 'placeholder' => 'files']],
                     ],
                 ],
             ],
@@ -233,16 +233,16 @@ class ToolCatalog
 
     public static function expiryOptions(bool $loggedIn): array
     {
-        $opts = ['1' => 'ساعة واحدة', '24' => '24 ساعة', '168' => '7 أيام'];
+        $opts = ['1' => __('ساعة واحدة'), '24' => __('24 ساعة'), '168' => __('7 أيام')];
         if ($loggedIn) {
-            $opts += ['720' => '30 يوماً', 'never' => 'بدون انتهاء'];
+            $opts += ['720' => __('30 يوماً'), 'never' => __('بدون انتهاء')];
         }
         return $opts;
     }
 
     public static function formatBytes(int $bytes): string
     {
-        $units = ['بايت', 'KB', 'MB', 'GB'];
+        $units = [__('بايت'), 'KB', 'MB', 'GB'];
         $i = 0;
         $n = (float) $bytes;
         while ($n >= 1024 && $i < count($units) - 1) {
@@ -276,13 +276,13 @@ class ToolCatalog
 
     public static function categoryLabel(string $cat): string
     {
-        return self::categories()[$cat]['title'] ?? 'ملف';
+        return self::categories()[$cat]['title'] ?? __('ملف');
     }
 
     public static function toolTitle(string $cat, string $tool): string
     {
         if ($cat === 'share') {
-            return 'مشاركة برابط';
+            return __('مشاركة برابط');
         }
         $c = self::categories()[$cat] ?? null;
         return $c ? $c['title'] . ' · ' . ($c['tools'][$tool]['title'] ?? $tool) : $tool;
@@ -307,7 +307,7 @@ class ToolCatalog
             $str = is_scalar($raw) ? trim((string) $raw) : '';
             if ($str === '') {
                 if ($required && !isset($f['value'])) {
-                    $errors[] = "الحقل «{$label}» مطلوب.";
+                    $errors[] = __('الحقل «:label» مطلوب.', ['label' => $label]);
                 }
                 $clean[$name] = $f['value'] ?? null;
                 continue;
@@ -315,25 +315,25 @@ class ToolCatalog
 
             if (in_array($f['type'], ['number', 'range'], true)) {
                 if (!is_numeric($str)) {
-                    $errors[] = "قيمة «{$label}» يجب أن تكون رقماً.";
+                    $errors[] = __('قيمة «:label» يجب أن تكون رقماً.', ['label' => $label]);
                     continue;
                 }
                 $num = (float) $str;
                 if (isset($f['min']) && $num < $f['min']) {
-                    $errors[] = "«{$label}» أقل من {$f['min']}.";
+                    $errors[] = __('«:label» أقل من :min.', ['label' => $label, 'min' => $f['min']]);
                 }
                 if (isset($f['max']) && $num > $f['max']) {
-                    $errors[] = "«{$label}» أكبر من {$f['max']}.";
+                    $errors[] = __('«:label» أكبر من :max.', ['label' => $label, 'max' => $f['max']]);
                 }
                 $clean[$name] = isset($f['step']) && $f['step'] < 1 ? $num : (int) round($num);
             } elseif ($f['type'] === 'select') {
                 if (!array_key_exists($str, $f['options'])) {
-                    $errors[] = "خيار غير صالح في «{$label}».";
+                    $errors[] = __('خيار غير صالح في «:label».', ['label' => $label]);
                 }
                 $clean[$name] = $str;
             } else {
                 if (isset($f['maxlength']) && mb_strlen($str) > $f['maxlength']) {
-                    $errors[] = "«{$label}» أطول من اللازم.";
+                    $errors[] = __('«:label» أطول من اللازم.', ['label' => $label]);
                 }
                 $clean[$name] = $str;
             }
@@ -342,4 +342,3 @@ class ToolCatalog
         return [$clean, $errors];
     }
 }
-

@@ -6,6 +6,13 @@
 (() => {
     'use strict';
 
+    const I18N = window.JU_I18N || {};
+    const tr = (k, fallback, vars = {}) => {
+        let s = I18N[k] || fallback;
+        for (const [vk, vv] of Object.entries(vars)) s = s.replace(`:${vk}`, vv);
+        return s;
+    };
+
     const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -13,7 +20,7 @@
     ));
 
     const fmtBytes = (b) => {
-        const u = ['بايت', 'KB', 'MB', 'GB'];
+        const u = Array.isArray(I18N.bytes) ? I18N.bytes : ['بايت', 'KB', 'MB', 'GB'];
         let i = 0, n = Number(b) || 0;
         while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
         return `${n.toFixed(i ? 1 : 0)} ${u[i]}`;
@@ -26,7 +33,7 @@
         if (!btn) return;
         const isDark = theme === 'dark';
         btn.innerHTML = isDark ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
-        btn.title = isDark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن';
+        btn.title = isDark ? tr('themeDarkTip', 'التبديل إلى الوضع الفاتح') : tr('themeLightTip', 'التبديل إلى الوضع الداكن');
     }
 
     syncThemeIcon(document.documentElement.getAttribute('data-bs-theme') || 'dark');
@@ -96,7 +103,7 @@
                 inp.remove();
             }
             const orig = copyBtn.innerHTML;
-            copyBtn.innerHTML = '<i class="bi bi-check2"></i> نُسخ';
+            copyBtn.innerHTML = `<i class="bi bi-check2"></i> ${esc(tr('copied', 'نُسخ'))}`;
             setTimeout(() => { copyBtn.innerHTML = orig; }, 1500);
         }
 
@@ -213,12 +220,12 @@
 
         fileInput.multiple = !!t.multi;
         fileInput.accept = t.accept.length ? t.accept.map((x) => '.' + x).join(',') : '';
-        acceptHint.textContent = (t.accept.length ? `الصيغ المدعومة: ${t.accept.join(', ').toUpperCase()}` : 'جميع الصيغ مدعومة')
-            + (t.multi ? ' · يمكنك اختيار عدة ملفات' : '');
+        acceptHint.textContent = (t.accept.length ? tr('supported', 'الصيغ المدعومة: :ext', { ext: t.accept.join(', ').toUpperCase() }) : tr('allSupported', 'جميع الصيغ مدعومة'))
+            + (t.multi ? tr('multiHint', ' · يمكنك اختيار عدة ملفات') : '');
 
         engineNote.innerHTML = t.engine === 'server'
-            ? `<i class="bi bi-hdd-network"></i> تُعالج على الخادم — الحد الأقصى ${fmtBytes(page.maxUpload)}`
-            : '<i class="bi bi-shield-check"></i> تُعالج مباشرة داخل متصفحك دون رفع الملف للخادم';
+            ? `<i class="bi bi-hdd-network"></i> ${esc(tr('serverNote', 'تُعالج على الخادم — الحد الأقصى :size', { size: fmtBytes(page.maxUpload) }))}`
+            : `<i class="bi bi-shield-check"></i> ${esc(tr('browserNote', 'تُعالج مباشرة داخل متصفحك دون رفع الملف للخادم'))}`;
 
         if (!t.multi && selectedFiles.length > 1) selectedFiles = [selectedFiles[0]];
         setStatus('', '');
@@ -234,7 +241,7 @@
             ? incoming.filter((f) => !t.accept.includes((f.name.split('.').pop() || '').toLowerCase()))
             : [];
         if (invalid.length) {
-            setStatus('danger', `صيغة غير مدعومة للملف «${esc(invalid[0].name)}». الصيغ المسموحة: ${esc(t.accept.join(', '))}`);
+            setStatus('danger', esc(tr('unsupportedExt', 'صيغة غير مدعومة للملف «:name». الصيغ المسموحة: :ext', { name: invalid[0].name, ext: t.accept.join(', ') })));
             return;
         }
         selectedFiles = t.multi ? incoming : [incoming[0]];
@@ -305,7 +312,7 @@
                 const playBtn = document.createElement('button');
                 playBtn.type = 'button';
                 playBtn.className = 'btn btn-light btn-sm mt-2';
-                playBtn.innerHTML = '<i class="bi bi-play-fill"></i> تشغيل / إيقاف المعاينة';
+                playBtn.innerHTML = `<i class="bi bi-play-fill"></i> ${esc(tr('playPreview', 'تشغيل / إيقاف المعاينة'))}`;
                 playBtn.onclick = () => { if (el.paused) el.play(); else el.pause(); };
 
                 const meta = document.createElement('div');
@@ -392,7 +399,7 @@
             form.elements.start.value = start.toFixed(1);
             form.elements.end.value = end.toFixed(1);
             if (readout) readout.textContent = `${fmtSec(start)} → ${fmtSec(end)}`;
-            if (durBadge) durBadge.textContent = `المدة: ${(end - start).toFixed(1)} ثانية`;
+            if (durBadge) durBadge.textContent = tr('durationSec', 'المدة: :s ثانية', { s: (end - start).toFixed(1) });
             if (seekTo !== null && mediaEl) mediaEl.currentTime = seekTo;
         };
 
@@ -583,8 +590,8 @@
         });
         const ct = res.headers.get('Content-Type') || '';
         if (!res.ok) {
-            const err = ct.includes('application/json') ? (await res.json()).error : 'تعذّر تنفيذ العملية.';
-            throw new Error(err || 'تعذّر تنفيذ العملية.');
+            const err = ct.includes('application/json') ? (await res.json()).error : tr('processErr', 'تعذّر تنفيذ العملية.');
+            throw new Error(err || tr('processErr', 'تعذّر تنفيذ العملية.'));
         }
         if (ct.includes('application/json')) {
             const data = await res.json();
@@ -753,7 +760,7 @@
         const items = Object.entries(stats).map(([k, v]) =>
             `<div class="col-6 col-md-4"><div class="p-3 border rounded-3 bg-light h-100"><div class="small text-secondary">${esc(k)}</div><div class="fw-bold mt-1">${esc(v)}</div></div></div>`
         ).join('');
-        resultSec.innerHTML = `<h3 class="h6 fw-bold mb-3"><i class="bi bi-check-circle-fill text-success"></i> إحصائيات الملف</h3><div class="row g-2">${items}</div>`;
+        resultSec.innerHTML = `<h3 class="h6 fw-bold mb-3"><i class="bi bi-check-circle-fill text-success"></i> ${esc(tr('statsTitle', 'إحصائيات الملف'))}</h3><div class="row g-2">${items}</div>`;
         resultSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -763,7 +770,7 @@
 
         const origSize = selectedFiles.reduce((s, f) => s + f.size, 0);
         const diff = origSize ? Math.round((1 - blob.size / origSize) * 100) : 0;
-        const savingBadge = diff > 0 ? `<span class="badge text-bg-success">وفّرت ${diff}%</span>` : '';
+        const savingBadge = diff > 0 ? `<span class="badge text-bg-success">${esc(tr('savedPct', 'وفّرت :pct%', { pct: diff }))}</span>` : '';
 
         let mediaHtml = '';
         if (blob.type.startsWith('image/')) {
@@ -778,12 +785,12 @@
         resultSec.innerHTML = `
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <div>
-                    <h3 class="h6 fw-bold mb-1"><i class="bi bi-check-circle-fill text-success"></i> جاهز: ${esc(name)}</h3>
+                    <h3 class="h6 fw-bold mb-1"><i class="bi bi-check-circle-fill text-success"></i> ${esc(tr('ready', 'جاهز: :name', { name }))}</h3>
                     <div class="small text-secondary">${fmtBytes(blob.size)} ${info ? '· ' + esc(info) : ''} ${savingBadge}</div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-accent" href="${resultBlobUrl}" download="${esc(name)}"><i class="bi bi-download"></i> تنزيل الملف</a>
-                    <button class="btn btn-outline-dark" type="button" id="shareResultBtn"><i class="bi bi-qr-code"></i> تحويل إلى رابط و QR</button>
+                    <a class="btn btn-accent" href="${resultBlobUrl}" download="${esc(name)}"><i class="bi bi-download"></i> ${esc(tr('downloadFile', 'تنزيل الملف'))}</a>
+                    <button class="btn btn-outline-dark" type="button" id="shareResultBtn"><i class="bi bi-qr-code"></i> ${esc(tr('shareBtn', 'تحويل إلى رابط و QR'))}</button>
                 </div>
             </div>
             ${mediaHtml}
@@ -794,11 +801,11 @@
             const btn = ev.currentTarget;
             const box = document.getElementById('shareResultBox');
             if (blob.size > page.maxUpload) {
-                box.innerHTML = `<div class="alert alert-warning small mb-0">حجم الملف الناتج (${fmtBytes(blob.size)}) أكبر من حد الرفع للمشاركة (${fmtBytes(page.maxUpload)}).</div>`;
+                box.innerHTML = `<div class="alert alert-warning small mb-0">${esc(tr('tooLargeShare', 'حجم الملف الناتج (:size) أكبر من حد الرفع للمشاركة (:max).', { size: fmtBytes(blob.size), max: fmtBytes(page.maxUpload) }))}</div>`;
                 return;
             }
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> جاري رفع الملف وإنشاء الرابط...';
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${esc(tr('creatingLink', 'جاري رفع الملف وإنشاء الرابط...'))}`;
             try {
                 const fd = new FormData();
                 fd.append('_token', csrf());
@@ -812,20 +819,20 @@
                     body: fd,
                 });
                 const data = await r.json();
-                if (!r.ok || !data.url) throw new Error(data.error || 'تعذّر إنشاء الرابط.');
+                if (!r.ok || !data.url) throw new Error(data.error || tr('linkErr', 'تعذّر إنشاء الرابط.'));
                 const u = esc(data.url);
                 box.innerHTML = `
                     <div class="share-box mt-2">
                         <div class="qr" data-qr="${u}"></div>
                         <div class="flex-grow-1 w-100">
-                            <label class="form-label small text-secondary">رابط المشاركة المباشر</label>
+                            <label class="form-label small text-secondary">${esc(tr('directShareLbl', 'رابط المشاركة المباشر'))}</label>
                             <div class="input-group mb-2" dir="ltr">
                                 <input type="text" class="form-control" value="${u}" readonly>
-                                <button class="btn btn-accent" type="button" data-copy="${u}"><i class="bi bi-clipboard"></i> نسخ</button>
+                                <button class="btn btn-accent" type="button" data-copy="${u}"><i class="bi bi-clipboard"></i> ${esc(tr('copy', 'نسخ'))}</button>
                             </div>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-light btn-sm" href="${u}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> فتح الصفحة</a>
-                                <button class="btn btn-light btn-sm" type="button" data-qr-download="${u}"><i class="bi bi-download"></i> تنزيل QR</button>
+                                <a class="btn btn-light btn-sm" href="${u}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> ${esc(tr('open', 'فتح'))}</a>
+                                <button class="btn btn-light btn-sm" type="button" data-qr-download="${u}"><i class="bi bi-download"></i> ${esc(tr('downloadQr', 'تنزيل QR'))}</button>
                             </div>
                         </div>
                     </div>`;
@@ -834,7 +841,7 @@
             } catch (err) {
                 box.innerHTML = `<div class="alert alert-danger small mb-0">${esc(err.message)}</div>`;
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-qr-code"></i> تحويل إلى رابط و QR';
+                btn.innerHTML = `<i class="bi bi-qr-code"></i> ${esc(tr('shareBtn', 'تحويل إلى رابط و QR'))}`;
             }
         };
 
@@ -859,15 +866,15 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!selectedFiles.length) {
-                setStatus('warning', 'اختر ملفاً أولاً قبل التنفيذ.');
+                setStatus('warning', esc(tr('readFileFirst', 'اختر ملفاً أولاً قبل التنفيذ.')));
                 return;
             }
             const t = page.tools[activeTool];
             const btn = form.querySelector('button[type="submit"]');
             const origBtn = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> جاري المعالجة...';
-            setStatus('info', 'جاري معالجة الملف...');
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${esc(tr('processing', 'جاري المعالجة...'))}`;
+            setStatus('info', esc(tr('processing', 'جاري المعالجة...')));
 
             try {
                 if (t.engine === 'server') {
@@ -883,7 +890,7 @@
                 }
                 setStatus('', '');
             } catch (err) {
-                setStatus('danger', esc(err.message || 'حدث خطأ أثناء المعالجة.').replace(/\n/g, '<br>'));
+                setStatus('danger', esc(err.message || tr('genericErr', 'حدث خطأ أثناء المعالجة.')).replace(/\n/g, '<br>'));
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origBtn;

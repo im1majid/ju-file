@@ -4,6 +4,12 @@
 window.JU_PDF = (() => {
     'use strict';
 
+    const tr = (k, fallback, vars = {}) => {
+        let s = (window.JU_I18N && window.JU_I18N[k]) || fallback;
+        for (const [vk, vv] of Object.entries(vars)) s = s.replace(`:${vk}`, vv);
+        return s;
+    };
+
     /** يحوّل نصاً مثل "1-3,5" إلى مصفوفة فهارس صفرية مرتبة (0-based). */
     function parsePages(spec, total) {
         const text = (spec || '').trim();
@@ -55,13 +61,13 @@ window.JU_PDF = (() => {
     }
 
     async function run(tool, files, formData) {
-        if (!window.PDFLib) throw new Error('مكتبة PDF لم تُحمّل.');
+        if (!window.PDFLib) throw new Error(tr('pdfNotLoaded', 'مكتبة PDF لم تُحمّل.'));
         const { PDFDocument, degrees } = window.PDFLib;
         const base = files[0].name.replace(/\.[^.]+$/, '');
 
         switch (tool) {
             case 'pdf_merge': {
-                if (files.length < 2) throw new Error('اختر ملفي PDF على الأقل للدمج.');
+                if (files.length < 2) throw new Error(tr('pdfSelectTwo', 'اختر ملفي PDF على الأقل للدمج.'));
                 const out = await PDFDocument.create();
                 let count = 0;
                 for (const f of files) {
@@ -70,7 +76,7 @@ window.JU_PDF = (() => {
                     pages.forEach((p) => out.addPage(p));
                     count += pages.length;
                 }
-                return makeResult(await out.save(), `${base}-merged.pdf`, `${count} صفحة`);
+                return makeResult(await out.save(), `${base}-merged.pdf`, tr('pdfPagesCount', ':n صفحة', { n: count }));
             }
 
             case 'pdf_extract': {
@@ -78,18 +84,18 @@ window.JU_PDF = (() => {
                 const indices = parsePages(formData.get('pages'), src.getPageCount());
                 const out = await PDFDocument.create();
                 (await out.copyPages(src, indices)).forEach((p) => out.addPage(p));
-                return makeResult(await out.save(), `${base}-extracted.pdf`, `${indices.length} صفحة`);
+                return makeResult(await out.save(), `${base}-extracted.pdf`, tr('pdfPagesCount', ':n صفحة', { n: indices.length }));
             }
 
             case 'pdf_delete': {
                 const src = await PDFDocument.load(await files[0].arrayBuffer());
                 const total = src.getPageCount();
                 const del = new Set(parsePages(formData.get('pages'), total));
-                if (del.size >= total) throw new Error('لا يمكن حذف جميع صفحات المستند.');
+                if (del.size >= total) throw new Error(tr('pdfAllDeleted', 'لا يمكن حذف جميع صفحات المستند.'));
                 const keep = [...Array(total).keys()].filter((i) => !del.has(i));
                 const out = await PDFDocument.create();
                 (await out.copyPages(src, keep)).forEach((p) => out.addPage(p));
-                return makeResult(await out.save(), `${base}-trimmed.pdf`, `تبقّى ${keep.length} صفحة`);
+                return makeResult(await out.save(), `${base}-trimmed.pdf`, tr('pdfPagesCount', ':n صفحة', { n: keep.length }));
             }
 
             case 'pdf_rotate': {
@@ -100,7 +106,7 @@ window.JU_PDF = (() => {
                     const p = doc.getPage(i);
                     p.setRotation(degrees((p.getRotation().angle + angle) % 360));
                 });
-                return makeResult(await doc.save(), `${base}-rotated.pdf`, `دُوّرت ${indices.length} صفحة`);
+                return makeResult(await doc.save(), `${base}-rotated.pdf`, tr('pdfPagesCount', ':n صفحة', { n: indices.length }));
             }
 
             case 'images_pdf': {
@@ -120,7 +126,7 @@ window.JU_PDF = (() => {
                         page.drawImage(img, { x: (pw - w) / 2, y: (ph - h) / 2, width: w, height: h });
                     }
                 }
-                return makeResult(await doc.save(), `${base}.pdf`, `${files.length} صفحة`);
+                return makeResult(await doc.save(), `${base}.pdf`, tr('pdfPagesCount', ':n صفحة', { n: files.length }));
             }
         }
         throw new Error('أداة PDF غير معروفة.');

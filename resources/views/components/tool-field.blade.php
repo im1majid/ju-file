@@ -1,0 +1,54 @@
+@props(['field', 'toolKey'])
+
+@php
+    $id = "f_{$toolKey}_{$field['name']}";
+    $name = $field['name'];
+    $label = $field['label'];
+    $val = $field['value'] ?? '';
+    $req = ($field['required'] ?? true) ? 'required' : '';
+@endphp
+
+@if($field['type'] === 'checkbox')
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="{{ $id }}" name="{{ $name }}" value="1" @checked(!empty($val))>
+        <label class="form-check-label" for="{{ $id }}">{{ $label }}</label>
+    </div>
+@elseif($field['type'] === 'select')
+    <div class="mb-3">
+        <label class="form-label" for="{{ $id }}">{{ $label }}</label>
+        <select class="form-select" id="{{ $id }}" name="{{ $name }}">
+            @foreach($field['options'] as $k => $optLabel)
+                <option value="{{ $k }}" @selected((string) $val === (string) $k)>{{ $optLabel }}</option>
+            @endforeach
+        </select>
+    </div>
+@elseif($field['type'] === 'range')
+    <div class="mb-3">
+        <label class="form-label" for="{{ $id }}">
+            {{ $label }}: <strong data-range-out="{{ $id }}">{{ $val }}{{ $field['suffix'] ?? '' }}</strong>
+        </label>
+        <input type="range" class="form-range" id="{{ $id }}" name="{{ $name }}"
+               min="{{ $field['min'] }}" max="{{ $field['max'] }}" value="{{ $val }}"
+               data-suffix="{{ $field['suffix'] ?? '' }}">
+    </div>
+@else
+    <div class="mb-3">
+        <label class="form-label" for="{{ $id }}">{{ $label }}</label>
+        @if(!empty($field['media_time']))
+            <div class="input-group">
+                <input type="{{ $field['type'] }}" class="form-control" id="{{ $id }}" name="{{ $name }}"
+                       value="{{ $val }}" min="{{ $field['min'] ?? '' }}" max="{{ $field['max'] ?? '' }}"
+                       step="{{ $field['step'] ?? 'any' }}" {{ $req }}>
+                <button type="button" class="btn btn-light" data-media-time="{{ $id }}" title="أخذ الوقت الحالي من المشغّل">
+                    <i class="bi bi-stopwatch"></i> الآن
+                </button>
+            </div>
+        @else
+            <input type="{{ $field['type'] }}" class="form-control" id="{{ $id }}" name="{{ $name }}"
+                   value="{{ $val }}" placeholder="{{ $field['placeholder'] ?? '' }}"
+                   min="{{ $field['min'] ?? '' }}" max="{{ $field['max'] ?? '' }}"
+                   step="{{ $field['step'] ?? 'any' }}" maxlength="{{ $field['maxlength'] ?? '' }}" {{ $req }}>
+        @endif
+    </div>
+@endif
+

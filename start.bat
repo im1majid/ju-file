@@ -1,5 +1,5 @@
 @echo off
-title Ju File - Local Server
+title Ju File (Laravel) - Local Server
 
 set "PROJECT_DIR=%~dp0"
 if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
@@ -18,7 +18,7 @@ if not exist "%PHP_EXE%" (
 )
 
 echo ===================================================
-echo   Ju File - Starting MySQL and PHP Web Server...
+echo   Ju File (Laravel) - Starting MySQL and Server...
 echo ===================================================
 
 netstat -ano | findstr ":3306 " >nul
@@ -33,11 +33,14 @@ if errorlevel 1 (
     )
 )
 
+cd /d "%PROJECT_DIR%"
+"%PHP_EXE%" artisan migrate --force >nul 2>&1
+
 echo.
-echo [OK] Server running at: http://localhost:8000
+echo [OK] Laravel Server running at: http://localhost:8000
 echo Keep this window open while using the site.
 echo ===================================================
 
 start "" cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:8000"
-"%PHP_EXE%" -d upload_max_filesize=60M -d post_max_size=65M -d memory_limit=512M -S localhost:8000 -t "%PROJECT_DIR%"
+"%PHP_EXE%" -d upload_max_filesize=60M -d post_max_size=65M -d memory_limit=512M artisan serve --host=127.0.0.1 --port=8000
 pause

@@ -1,0 +1,6 @@
+storage/uploads/*
+!storage/uploads/.htaccess
+.env
+.wrangler/
+node_modules/
+

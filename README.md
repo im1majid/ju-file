@@ -1,49 +1,35 @@
-# Ju File — منصة أدوات الملفات والمشاركة السريعة (URL & QR)
+# Ju File — منصة أدوات الملفات والمشاركة السريعة (Laravel 12)
 
-تطبيق ويب متكامل مبني بـ **PHP 8 + MySQL (PDO) + Bootstrap 5 RTL** يوفّر صفحة متخصصة لكل نوع ملف مع عرض الأدوات الممكنة لهذا النوع تحديداً، بالإضافة إلى ميزة تحويل أي ملف إلى **رابط قصير (URL) أو رمز QR** للمشاركة الفورية.
-
----
-
-## المزايا والأقسام حسب نوع الملف
-
-| القسم | الصفحة | الأدوات المتاحة لهذا النوع تحديداً |
-|---|---|---|
-| **الصور** | `image.php` | تصغير الحجم، تغيير الأبعاد، قص تفاعلي (Crop)، تدوير وقلب، تحويل الصيغة (`JPG / PNG / WebP / GIF / BMP`)، فلاتر لونية |
-| **الفيديو** | `video.php` | تصغير الحجم (MP4)، قص المدة الزمنية، اقتصاص أبعاد الإطار (`9:16`، `1:1`، `16:9`...)، تحويل الصيغة (`MP4 / WebM / MOV / MKV / AVI / GIF`)، استخراج الصوت، كتم الصوت |
-| **الصوت** | `audio.php` | تحويل الصيغة (`MP3 / WAV / OGG / M4A / FLAC`)، تصغير الحجم، قص المدة، تعديل وموازنة مستوى الصوت |
-| **المستندات والملفات الكتابية** | `document.php` | دمج PDF، استخراج صفحات، حذف صفحات، تدوير PDF، صور إلى PDF، تحويل نصي (`CSV ⇄ JSON`، نص إلى HTML، تنسيق JSON)، تنظيف النص، بحث واستبدال، إصلاح الترميز العربي (`UTF-8`)، إحصائيات النص، ضغط إلى `ZIP` |
-| **المشاركة السريعة** | `share.php` و `f.php` | رفع أي ملف (أو تحويل نتيجة أي أداة مباشرة) إلى رابط قصير + رمز QR قابل للنسخ والتنزيل، مع خيار كلمة مرور ومدة صلاحية |
+تطبيق ويب متكامل مبني بإطار **Laravel 12 (PHP 8.3) + MySQL + Blade + Bootstrap 5 RTL**، يوفّر صفحة متخصصة لكل نوع ملف مع عرض الأدوات الممكنة لهذا النوع تحديداً، بالإضافة إلى ميزة تحويل أي ملف إلى **رابط عام خارجي (URL) ورمز QR** للمشاركة الفورية.
 
 ---
 
-## طريقة التشغيل (XAMPP / Laragon / WAMP)
+## هيكلة المشروع (MVC)
 
-1. انسخ مجلد المشروع إلى `htdocs` (أو شغّل خادم PHP المدمج من داخل المجلد).
-2. تأكد من تفعيل الامتدادات `pdo_mysql`, `gd`, `zip`, `mbstring`, `fileinfo` في ملف `php.ini`.
-3. شغّل **MySQL** ثم استورد قاعدة البيانات من الملف [`database.sql`](database.sql) عبر phpMyAdmin أو الأمر:
+- **`app/Http/Controllers/`**:
+  - `HomeController.php`: الصفحة الرئيسية والإحصائيات الحية من قاعدة البيانات.
+  - `ToolController.php`: صفحات الأدوات حسب النوع (`/image`, `/video`, `/audio`, `/document`) وواجهتا المعالجة وتسجيل العمليات (`/api/process`, `/api/log`).
+  - `ShareController.php`: رفع الملفات والمشاركة عبر رابط خارجي + QR (`/share`, `/f/{token}`, `/download/{token}`, التعديل).
+  - `AuthController.php`: التسجيل، تسجيل الدخول، وتسجيل الخروج عبر جلسات Laravel.
+  - `DashboardController.php`: لوحة ملفاتي (بحث، تصفية، ترتيب، حذف) وسجل العمليات.
+  - `AccountController.php`: تعديل الاسم، تغيير كلمة المرور، وحذف الحساب.
+- **`app/Models/`**: `User`, `Share`, `Operation` (Eloquent ORM).
+- **`app/Services/`**:
+  - `ToolCatalog.php`: تعريف جميع الأقسام والأدوات وقواعد التحقق.
+  - `ExternalHostService.php`: رفع الملفات لاستضافة عامة (`x0.at` / `uguu.se` / `tmpfiles.org`) لإرجاع رابط مشاركة خارجي.
+  - `FileProcessing/`: `ImageProcessor.php` (GD)، `TextProcessor.php`، `ZipProcessor.php`.
+- **`resources/views/`**: قوالب Blade (`layouts/app.blade.php`، مكوّنات `components/share-box.blade.php` و `components/tool-field.blade.php`، وصفحات التطبيق).
+- **`database/migrations/`**: جداول `users`, `shares`, `operations`.
+- **`routes/web.php`**: تعريف جميع المسارات النظيفة + التوافق مع الروابط السابقة.
+- **`public/assets/`**: ملفات CSS (`style.css`) و JS (`app.js`, `media.js`, `pdf.js`) ومكتبات `vendor`.
+
+---
+
+## طريقة التشغيل محلياً
+
+1. شغّل الملف [`start.bat`](start.bat) (يشغّل MySQL، ينفّذ `php artisan migrate --force`، ويفتح الموقع على `http://localhost:8000`).
+2. أو يدوياً:
    ```bash
-   mysql -u root < database.sql
+   php artisan migrate --force
+   php -d upload_max_filesize=60M -d post_max_size=65M -d memory_limit=512M artisan serve --host=127.0.0.1 --port=8000
    ```
-4. عدّل بيانات الاتصال في [`config.php`](config.php) إذا كانت مختلفة عن الإعدادات الافتراضية (`root` بدون كلمة مرور).
-5. افتح الموقع في المتصفح (أو شغّله عبر `php -S localhost:8000`).
-
----
-
-## مطابقة متطلبات التقييم (Application Requirements)
-
-- **Home Page (`index.php`)**: صفحة رئيسية متجاوبة تحتوي على شريط تنقل (`header.php`)، مقدمة واضحة، بطاقات اختيار نوع الملف، إحصائيات حية، وتذييل (`footer.php`).
-- **Form Handling — CLO 1.2 (`share.php`, `register.php`, `login.php`, `share_edit.php`, `account.php`, `api/process.php`)**: نماذج متعددة مع تحقق كامل من المدخلات على الخادم (`validate_fields` والتحقق المخصص) وعرض رسائل الخطأ والنجاح بوضوح.
-- **Database Integration (`includes/db.php`, `database.sql`)**:
-  - اتصال MySQL عبر `PDO` مع الاستعلامات المجهّزة.
-  - عمليات الإضافة (`INSERT` للمستخدمين والروابط وسجل العمليات)، التحديث (`UPDATE` لتعديل الروابط، عداد التنزيلات، وتحديث الحساب)، والحذف (`DELETE` لحذف الروابط، مسح السجل، وحذف الحساب).
-  - تصفية واسترجاع البيانات (`SELECT` مع البحث بالاسم، التصفية حسب نوع الملف وحالة الصلاحية، والترتيب في `dashboard.php`).
-- **Security — Ch. 7 (`includes/init.php`, `includes/functions.php`)**:
-  - استعلامات مجهّزة حقيقية (`PDO::ATTR_EMULATE_PREPARES => false`).
-  - هروب جميع المخرجات عبر دالة `e()` (`htmlspecialchars`).
-  - حماية جميع نماذج `POST` برمز CSRF (`csrf_field()` / `verify_csrf()`).
-  - تجزئة كلمات المرور للمستخدمين ولحماية الروابط عبر `password_hash()` و `password_verify()`.
-- **Authentication (`register.php`, `login.php`, `logout.php`, `account.php`)**: نظام حسابات كامل يعتمد على جلسات PHP مع `session_regenerate_id(true)`.
-- **Files and Reusable Code — Ch. 4 (`includes/*`, `download.php`, `api/process.php`)**: رفع ومعالجة وتنزيل الملفات بأمان، مع فصل الكود المشترك عبر `require` / `require_once` (`init.php`, `header.php`, `footer.php`, `components.php`, `tool_page.php`).
-- **Dynamic Data Display (`index.php`, `dashboard.php`, `share.php`, `f.php`)**: عرض الإحصائيات، قائمة الملفات، وسجل العمليات مباشرة من قاعدة البيانات.
-- **Interface — CLO 2.1, 2.2 (`assets/css/style.css`, `assets/js/app.js`)**: تصميم بسيط جداً ومتجاوب بـ Bootstrap 5 RTL مع معاينة فورية، سحب وإفلات، قص تفاعلي، وتوليد فوري لرموز QR.
-

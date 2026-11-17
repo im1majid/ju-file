@@ -330,7 +330,7 @@ function layout(state, { title = APP_NAME, active = '', body = '', scripts = [] 
     : `<a class="btn btn-light btn-sm ${active === 'login' ? 'active' : ''}" href="login.php">دخول</a><a class="btn btn-outline-dark btn-sm" href="register.php">حساب جديد</a>`;
 
   return `<!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -340,7 +340,8 @@ function layout(state, { title = APP_NAME, active = '', body = '', scripts = [] 
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=3" rel="stylesheet">
+  <script>(() => { const t = localStorage.getItem('ju_theme') === 'light' ? 'light' : 'dark'; document.documentElement.setAttribute('data-bs-theme', t); })();</script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg border-bottom bg-white sticky-top">
@@ -352,6 +353,7 @@ function layout(state, { title = APP_NAME, active = '', body = '', scripts = [] 
       <div class="d-flex align-items-center gap-2">
         <a class="btn btn-accent btn-sm" href="share.php"><i class="bi bi-qr-code"></i> مشاركة ملف</a>
         ${userMenu}
+        <button type="button" id="themeToggle" class="btn btn-light btn-sm theme-toggle" title="تبديل المظهر (داكن / فاتح)" aria-label="تبديل المظهر"><i class="bi bi-sun"></i></button>
       </div>
     </div>
   </div>

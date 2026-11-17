@@ -29,11 +29,11 @@ class ToolController extends Controller
         $scripts = [];
         if (in_array('ffmpeg', $engines, true)) {
             $scripts[] = 'assets/vendor/ffmpeg.js';
-            $scripts[] = 'assets/js/media.js';
+            $scripts[] = 'assets/js/media.js?v=2';
         }
         if (in_array('pdf', $engines, true)) {
             $scripts[] = 'assets/vendor/pdf-lib.min.js';
-            $scripts[] = 'assets/js/pdf.js';
+            $scripts[] = 'assets/js/pdf.js?v=2';
         }
 
         return view('tools.category', compact('category', 'cat', 'tools', 'scripts'));

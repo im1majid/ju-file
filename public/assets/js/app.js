@@ -118,7 +118,7 @@
 
     document.addEventListener('input', (e) => {
         if (e.target.matches('input[type="range"]')) {
-            const out = document.querySelector(`output[data-for="${e.target.id}"]`);
+            const out = document.querySelector(`[data-range-out="${e.target.id}"], output[data-for="${e.target.id}"]`);
             if (out) out.textContent = e.target.value + (e.target.dataset.suffix || '');
         }
     });
@@ -172,6 +172,23 @@
     let selectedFiles = [];
     let objectUrls = [];
     let resultBlobUrl = null;
+    let cropAspectRatio = null;
+    let onCropRatioChange = null;
+
+    document.querySelectorAll('[data-crop-ratio]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-crop-ratio]').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            const val = btn.dataset.cropRatio;
+            if (val === 'free') {
+                cropAspectRatio = null;
+            } else {
+                const [rw, rh] = val.split(':').map(Number);
+                cropAspectRatio = rw / rh;
+            }
+            if (typeof onCropRatioChange === 'function') onCropRatioChange(cropAspectRatio);
+        });
+    });
 
     function clearUrls() {
         objectUrls.forEach((u) => URL.revokeObjectURL(u));
@@ -316,8 +333,6 @@
         if (!form) return;
 
         const readout = document.getElementById('cropReadout');
-        const ratioBtns = [...form.querySelectorAll('[data-crop-ratio]')];
-        let aspect = null; // null = حر
 
         const box = document.createElement('div');
         box.className = 'crop-box';
@@ -368,22 +383,11 @@
             applyBox((maxW - w) / 2, (maxH - h) / 2, w, h);
         };
 
-        ratioBtns.forEach((btn) => {
-            btn.onclick = () => {
-                ratioBtns.forEach((b) => b.classList.remove('active'));
-                btn.classList.add('active');
-                const val = btn.dataset.cropRatio;
-                if (val === 'free') {
-                    aspect = null;
-                } else {
-                    const [rw, rh] = val.split(':').map(Number);
-                    aspect = rw / rh;
-                    fitAspect(aspect);
-                }
-            };
-        });
+        onCropRatioChange = (ratio) => {
+            if (ratio) fitAspect(ratio);
+        };
 
-        requestAnimationFrame(() => fitAspect(null));
+        requestAnimationFrame(() => fitAspect(cropAspectRatio));
 
         let drag = null;
         stage.onpointerdown = (e) => {
@@ -416,8 +420,8 @@
             }
             if (drag.mode === 'draw') {
                 let w = Math.max(16, Math.abs(dx));
-                let h = aspect ? w / aspect : Math.max(16, Math.abs(dy));
-                if (h > r.height) { h = r.height; if (aspect) w = h * aspect; }
+                let h = cropAspectRatio ? w / cropAspectRatio : Math.max(16, Math.abs(dy));
+                if (h > r.height) { h = r.height; if (cropAspectRatio) w = h * cropAspectRatio; }
                 const x = dx < 0 ? Math.max(0, drag.px - w) : drag.px;
                 const y = dy < 0 ? Math.max(0, drag.py - h) : drag.py;
                 applyBox(x, y, w, h);
@@ -437,9 +441,9 @@
                 h = s.y + s.h - ny;
                 y = ny;
             }
-            if (aspect) {
-                if (drag.mode === 'n' || drag.mode === 's') w = h * aspect;
-                else h = w / aspect;
+            if (cropAspectRatio) {
+                if (drag.mode === 'n' || drag.mode === 's') w = h * cropAspectRatio;
+                else h = w / cropAspectRatio;
             }
             applyBox(x, y, w, h);
         };
@@ -451,11 +455,16 @@
 
     async function runServerTool(form) {
         const fd = new FormData(form);
+        fd.append('_token', csrf());
         fd.append('category', page.category);
         fd.append('tool', activeTool);
         selectedFiles.forEach((f) => fd.append('files[]', f));
 
-        const res = await fetch('api/process.php', { method: 'POST', body: fd });
+        const res = await fetch('api/process.php', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
+            body: fd,
+        });
         const ct = res.headers.get('Content-Type') || '';
         if (!res.ok) {
             const err = ct.includes('application/json') ? (await res.json()).error : 'تعذّر تنفيذ العملية.';
@@ -615,11 +624,12 @@
 
     function logBrowserOp() {
         const fd = new FormData();
+        fd.append('_token', csrf());
         fd.append('csrf_token', csrf());
         fd.append('category', page.category);
         fd.append('tool', activeTool);
         if (selectedFiles[0]) fd.append('file_name', selectedFiles[0].name);
-        fetch('api/log.php', { method: 'POST', body: fd }).catch(() => {});
+        fetch('api/log.php', { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf() }, body: fd }).catch(() => {});
     }
 
     function renderStatsResult(stats) {
@@ -675,11 +685,16 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> جاري رفع الملف وإنشاء الرابط...';
             try {
                 const fd = new FormData();
+                fd.append('_token', csrf());
                 fd.append('csrf_token', csrf());
                 fd.append('ajax', '1');
                 fd.append('expiry', '24');
                 fd.append('file', new File([blob], name, { type: blob.type || 'application/octet-stream' }));
-                const r = await fetch('share.php', { method: 'POST', body: fd });
+                const r = await fetch('share.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
+                    body: fd,
+                });
                 const data = await r.json();
                 if (!r.ok || !data.url) throw new Error(data.error || 'تعذّر إنشاء الرابط.');
                 const u = esc(data.url);

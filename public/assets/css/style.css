@@ -441,3 +441,9 @@ main { flex: 1; }
 
 [data-bs-theme="light"] .bg-light { background-color: var(--surface-2) !important; }
 [data-bs-theme="light"] .cat-card:hover { box-shadow: var(--shadow); }
+
+#cropRatios .btn.active {
+    background: var(--accent-btn) !important;
+    border-color: var(--accent-btn-border) !important;
+    color: var(--accent-contrast) !important;
+}

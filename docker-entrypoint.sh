@@ -42,4 +42,8 @@ php /var/www/html/artisan view:cache || true
 
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+# ضمان تفعيل وحدة MPM واحدة فقط لـ Apache لتفادي خطأ AH00534
+a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
 exec apache2-foreground

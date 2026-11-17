@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libonig-dev \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
     && docker-php-ext-install -j$(nproc) pdo_mysql gd zip mbstring exif \
-    && a2enmod rewrite headers \
+    && a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 # توجيه Apache إلى مجلد public الخاص بـ Laravel

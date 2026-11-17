@@ -17,6 +17,8 @@ class Share extends Model
         'original_name',
         'stored_name',
         'external_url',
+        'cloudinary_public_id',
+        'cloudinary_resource_type',
         'mime',
         'size',
         'category',

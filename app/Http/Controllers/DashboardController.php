@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Share;
+use App\Services\ExternalHostService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,15 +59,15 @@ class DashboardController extends Controller
         return view('dashboard', compact('user', 'shares', 'stats', 'opsCount', 'history', 'categories', 'q', 'category', 'status', 'sort'));
     }
 
-    public function destroyShare(Request $request, int $id): RedirectResponse
+    public function destroyShare(Request $request, int $id, ExternalHostService $externalHost): RedirectResponse
     {
         $share = Share::where('id', $id)->where('user_id', Auth::id())->first();
         if ($share) {
-            @unlink(storage_path('app/uploads/' . $share->stored_name));
+            $externalHost->purgeShareAssets($share);
             $share->delete();
-            return back()->with('success', 'تم حذف الملف ورابطه.');
+            return back()->with('success', __('تم حذف الملف ورابطه.'));
         }
-        return back()->with('danger', 'الملف غير موجود.');
+        return back()->with('danger', __('الملف غير موجود.'));
     }
 
     public function clearHistory(): RedirectResponse

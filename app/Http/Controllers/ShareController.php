@@ -21,11 +21,12 @@ class ShareController extends Controller
     {
         $user = Auth::user();
         $expiryOptions = ToolCatalog::expiryOptions((bool) $user);
+        $maxUploadBytes = ToolCatalog::maxUploadBytes((bool) $user);
         $recent = $user
             ? $user->shares()->active()->latest('id')->limit(5)->get()
             : collect();
 
-        return view('shares.create', compact('expiryOptions', 'recent'));
+        return view('shares.create', compact('expiryOptions', 'maxUploadBytes', 'recent'));
     }
 
     public function store(Request $request, ExternalHostService $externalHost): JsonResponse|RedirectResponse
@@ -33,22 +34,23 @@ class ShareController extends Controller
         $ajax = $request->boolean('ajax');
         $user = Auth::user();
         $expiryOptions = ToolCatalog::expiryOptions((bool) $user);
+        $maxBytes = ToolCatalog::maxUploadBytes((bool) $user);
 
-        $this->cleanupExpired();
+        $this->cleanupExpired($externalHost);
 
         $validator = Validator::make($request->all(), [
             'title'    => ['nullable', 'string', 'max:150'],
             'expiry'   => ['required', 'in:' . implode(',', array_keys($expiryOptions))],
             'password' => ['nullable', 'string', 'min:4', 'max:72'],
-            'file'     => ['required', 'file', 'max:' . (int) (ToolCatalog::MAX_UPLOAD_BYTES / 1024)],
+            'file'     => ['required', 'file', 'max:' . (int) ($maxBytes / 1024)],
         ], [
-            'title.max'     => 'العنوان يجب ألا يتجاوز 150 حرفاً.',
-            'expiry.in'     => 'مدة الصلاحية غير صالحة' . ($user ? '.' : ' (سجّل دخولك للمدد الأطول).'),
-            'password.min'  => 'كلمة مرور الرابط يجب أن تكون 4 أحرف على الأقل.',
-            'password.max'  => 'كلمة مرور الرابط طويلة جداً.',
-            'file.required' => 'اختر ملفاً للمشاركة.',
-            'file.file'     => 'الملف غير صالح.',
-            'file.max'      => 'حجم الملف يتجاوز الحد الأقصى المسموح.',
+            'title.max'     => __('العنوان يجب ألا يتجاوز 150 حرفاً.'),
+            'expiry.in'     => __('مدة الصلاحية غير صالحة') . ($user ? '.' : ' ' . __('(سجّل دخولك للمدد الأطول).')),
+            'password.min'  => __('كلمة مرور الرابط يجب أن تكون 4 أحرف على الأقل.'),
+            'password.max'  => __('كلمة مرور الرابط طويلة جداً.'),
+            'file.required' => __('اختر ملفاً للمشاركة.'),
+            'file.file'     => __('الملف غير صالح.'),
+            'file.max'      => __('حجم الملف يتجاوز الحد الأقصى المسموح (:size).', ['size' => ToolCatalog::formatBytes($maxBytes)]),
         ]);
 
         if ($validator->fails()) {
@@ -70,27 +72,34 @@ class ShareController extends Controller
         $storedPath = $uploadDir . DIRECTORY_SEPARATOR . $stored;
 
         $mime = mime_content_type($storedPath) ?: ($file->getClientMimeType() ?: 'application/octet-stream');
+        $fileSize = filesize($storedPath) ?: 0;
         $originalName = ToolCatalog::cleanFilename($file->getClientOriginalName());
-        $externalUrl = $externalHost->upload($storedPath, $originalName);
+        $uploaded = $externalHost->upload($storedPath, $originalName);
+
+        // حذف النسخة المحلية فوراً إذا نجح الرفع إلى Cloudinary حتى لا يمتلئ قرص Railway
+        if ($uploaded && $uploaded['is_cloudinary']) {
+            @unlink($storedPath);
+        }
 
         $token = bin2hex(random_bytes(8));
-        $expiry = (string) $request->input('expiry', '24');
-        $hours = $expiry === 'never' ? 0 : (int) $expiry;
+        $hours = max(1, (int) $request->input('expiry', '24'));
         $password = (string) $request->input('password', '');
         $title = trim((string) $request->input('title', ''));
 
         $share = Share::create([
-            'user_id'       => $user?->id,
-            'token'         => $token,
-            'title'         => $title !== '' ? $title : null,
-            'original_name' => $originalName,
-            'stored_name'   => $stored,
-            'external_url'  => $externalUrl,
-            'mime'          => $mime,
-            'size'          => filesize($storedPath) ?: 0,
-            'category'      => ToolCatalog::categoryOfMime($mime),
-            'password_hash' => $password !== '' ? Hash::make($password) : null,
-            'expires_at'    => $hours > 0 ? now()->addHours($hours) : null,
+            'user_id'                  => $user?->id,
+            'token'                    => $token,
+            'title'                    => $title !== '' ? $title : null,
+            'original_name'            => $originalName,
+            'stored_name'              => $stored,
+            'external_url'             => $uploaded['url'] ?? null,
+            'cloudinary_public_id'     => $uploaded['public_id'] ?? null,
+            'cloudinary_resource_type' => $uploaded['resource_type'] ?? null,
+            'mime'                     => $mime,
+            'size'                     => $fileSize,
+            'category'                 => ToolCatalog::categoryOfMime($mime),
+            'password_hash'            => $password !== '' ? Hash::make($password) : null,
+            'expires_at'               => now()->addHours($hours),
         ]);
 
         Operation::create([
@@ -106,7 +115,7 @@ class ShareController extends Controller
         }
 
         return redirect()->route('shares.show', $token)
-            ->with('success', 'تم رفع الملف وإنشاء رابط المشاركة العام ورمز QR بنجاح!');
+            ->with('success', __('تم رفع الملف وإنشاء رابط المشاركة العام ورمز QR بنجاح!'));
     }
 
     public function show(Request $request, ?string $token = null): View
@@ -226,9 +235,7 @@ class ShareController extends Controller
         $title = trim((string) ($data['title'] ?? ''));
         $share->title = $title !== '' ? $title : null;
 
-        if ($data['expiry'] === 'never') {
-            $share->expires_at = null;
-        } elseif ($data['expiry'] !== 'keep') {
+        if ($data['expiry'] !== 'keep') {
             $share->expires_at = now()->addHours((int) $data['expiry']);
         }
 
@@ -251,17 +258,17 @@ class ShareController extends Controller
         return Share::where('token', $token)->first();
     }
 
-    private function cleanupExpired(): void
+    private function cleanupExpired(ExternalHostService $externalHost): void
     {
-        if (random_int(1, 20) !== 1) {
+        if (random_int(1, 10) !== 1) {
             return;
         }
         Share::whereNotNull('expires_at')
             ->where('expires_at', '<', now())
             ->limit(25)
             ->get()
-            ->each(function (Share $share) {
-                @unlink(storage_path('app/uploads/' . $share->stored_name));
+            ->each(function (Share $share) use ($externalHost) {
+                $externalHost->purgeShareAssets($share);
                 $share->delete();
             });
     }

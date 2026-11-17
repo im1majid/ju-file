@@ -24,7 +24,7 @@
                     <i class="bi bi-cloud-arrow-up display-6 text-accent"></i>
                     <div class="fw-bold mt-2"><?php echo e(__('اسحب أي ملف هنا أو اضغط للاختيار')); ?></div>
                     <div class="small text-secondary mt-1" data-file-label>
-                        <?php echo e(__('الحد الأقصى :size · جميع الصيغ مدعومة', ['size' => \App\Services\ToolCatalog::formatBytes(\App\Services\ToolCatalog::MAX_UPLOAD_BYTES)])); ?>
+                        <?php echo e(__('الحد الأقصى :size · جميع الصيغ مدعومة', ['size' => \App\Services\ToolCatalog::formatBytes($maxUploadBytes)])); ?>
 
                     </div>
                     <input class="d-none" type="file" id="shareFile" name="file" required>
@@ -45,7 +45,7 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                         <?php if(auth()->guard()->guest()): ?>
-                            <div class="form-text"><?php echo e(__('سجّل دخولك للحصول على مدة 30 يوماً أو بدون انتهاء.')); ?></div>
+                            <div class="form-text"><?php echo e(__('سجّل دخولك للحصول على حد رفع 100 MB ومدة صلاحية حتى 30 يوماً.')); ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="col-sm-6">

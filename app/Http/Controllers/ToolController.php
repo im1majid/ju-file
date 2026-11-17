@@ -69,11 +69,13 @@ class ToolController extends Controller
             $errors[] = 'الحد الأقصى 20 ملفاً في المرة الواحدة.';
         }
 
+        $maxBytes = ToolCatalog::maxUploadBytes(Auth::check());
+
         foreach ($files as $f) {
             if (!$f->isValid()) {
                 $errors[] = 'تعذّر رفع الملف: ' . $f->getErrorMessage();
-            } elseif ($f->getSize() > ToolCatalog::MAX_UPLOAD_BYTES) {
-                $errors[] = 'حجم الملف يتجاوز الحد الأقصى (' . ToolCatalog::formatBytes(ToolCatalog::MAX_UPLOAD_BYTES) . ').';
+            } elseif ($f->getSize() > $maxBytes) {
+                $errors[] = __('حجم الملف يتجاوز الحد الأقصى (:size).', ['size' => ToolCatalog::formatBytes($maxBytes)]);
             } elseif ($tool['accept'] && !in_array(strtolower($f->getClientOriginalExtension()), $tool['accept'], true)) {
                 $errors[] = 'صيغة «' . $f->getClientOriginalName() . '» غير مدعومة. الصيغ المقبولة: ' . implode('، ', $tool['accept']);
             }

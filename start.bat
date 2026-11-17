@@ -42,5 +42,5 @@ echo Keep this window open while using the site.
 echo ===================================================
 
 start "" cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:8000"
-"%PHP_EXE%" -d upload_max_filesize=60M -d post_max_size=65M -d memory_limit=512M artisan serve --host=127.0.0.1 --port=8000
+"%PHP_EXE%" -d upload_max_filesize=105M -d post_max_size=110M -d memory_limit=512M artisan serve --host=127.0.0.1 --port=8000
 pause

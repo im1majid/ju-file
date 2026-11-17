@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ExternalHostService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,15 +53,15 @@ class AccountController extends Controller
         return redirect()->route('account')->with('success', 'تم تغيير كلمة المرور.');
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, ExternalHostService $externalHost): RedirectResponse
     {
         $user = Auth::user();
         if (!Hash::check((string) $request->input('current_password', ''), $user->password_hash)) {
             return back()->withErrors(['delete' => 'كلمة المرور غير صحيحة.']);
         }
 
-        foreach ($user->shares()->pluck('stored_name') as $stored) {
-            @unlink(storage_path('app/uploads/' . $stored));
+        foreach ($user->shares()->get() as $share) {
+            $externalHost->purgeShareAssets($share);
         }
 
         Auth::logout();

@@ -24,8 +24,8 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 
 # رفع حدود حجم الملفات المرفوعة والذاكرة
 RUN { \
-        echo "upload_max_filesize=60M"; \
-        echo "post_max_size=65M"; \
+        echo "upload_max_filesize=105M"; \
+        echo "post_max_size=110M"; \
         echo "memory_limit=512M"; \
     } > /usr/local/etc/php/conf.d/jufile.ini
 

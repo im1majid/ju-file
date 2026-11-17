@@ -26,7 +26,7 @@
                     <i class="bi bi-cloud-arrow-up display-6 text-accent"></i>
                     <div class="fw-bold mt-2">{{ __('اسحب أي ملف هنا أو اضغط للاختيار') }}</div>
                     <div class="small text-secondary mt-1" data-file-label>
-                        {{ __('الحد الأقصى :size · جميع الصيغ مدعومة', ['size' => \App\Services\ToolCatalog::formatBytes(\App\Services\ToolCatalog::MAX_UPLOAD_BYTES)]) }}
+                        {{ __('الحد الأقصى :size · جميع الصيغ مدعومة', ['size' => \App\Services\ToolCatalog::formatBytes($maxUploadBytes)]) }}
                     </div>
                     <input class="d-none" type="file" id="shareFile" name="file" required>
                 </label>
@@ -46,7 +46,7 @@
                             @endforeach
                         </select>
                         @guest
-                            <div class="form-text">{{ __('سجّل دخولك للحصول على مدة 30 يوماً أو بدون انتهاء.') }}</div>
+                            <div class="form-text">{{ __('سجّل دخولك للحصول على حد رفع 100 MB ومدة صلاحية حتى 30 يوماً.') }}</div>
                         @endguest
                     </div>
                     <div class="col-sm-6">

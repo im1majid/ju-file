@@ -4,8 +4,15 @@ namespace App\Services;
 
 class ToolCatalog
 {
-    public const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
+    public const MAX_GUEST_BYTES  = 15 * 1024 * 1024;  // 15 MB للزوار
+    public const MAX_USER_BYTES   = 100 * 1024 * 1024; // 100 MB للمسجلين
+    public const MAX_UPLOAD_BYTES = self::MAX_USER_BYTES;
     public const MAX_IMAGE_PIXELS = 45_000_000;
+
+    public static function maxUploadBytes(bool $loggedIn): int
+    {
+        return $loggedIn ? self::MAX_USER_BYTES : self::MAX_GUEST_BYTES;
+    }
 
     public static function categories(): array
     {
@@ -235,7 +242,7 @@ class ToolCatalog
     {
         $opts = ['1' => __('ساعة واحدة'), '24' => __('24 ساعة'), '168' => __('7 أيام')];
         if ($loggedIn) {
-            $opts += ['720' => __('30 يوماً'), 'never' => __('بدون انتهاء')];
+            $opts += ['720' => __('30 يوماً')];
         }
         return $opts;
     }

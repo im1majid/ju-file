@@ -5,9 +5,10 @@
     $activePage = $category;
     $firstKey = array_key_first($tools);
     $firstTool = $tools[$firstKey];
+    $maxUploadBytes = \App\Services\ToolCatalog::maxUploadBytes(auth()->check());
     $clientConfig = [
         'category'  => $category,
-        'maxUpload' => \App\Services\ToolCatalog::MAX_UPLOAD_BYTES,
+        'maxUpload' => $maxUploadBytes,
         'tools'     => array_map(fn ($t) => [
             'title'  => $t['title'],
             'desc'   => $t['desc'],
@@ -50,7 +51,7 @@
 
             <div class="small text-secondary mb-3" id="engineNote">
                 @if($firstTool['engine'] === 'server')
-                    <i class="bi bi-hdd-network"></i> {{ __('تُعالج على الخادم — الحد الأقصى :size', ['size' => \App\Services\ToolCatalog::formatBytes(\App\Services\ToolCatalog::MAX_UPLOAD_BYTES)]) }}
+                    <i class="bi bi-hdd-network"></i> {{ __('تُعالج على الخادم — الحد الأقصى :size', ['size' => \App\Services\ToolCatalog::formatBytes($maxUploadBytes)]) }}
                 @else
                     <i class="bi bi-shield-check"></i> {{ __('تُعالج مباشرة داخل متصفحك دون رفع الملف للخادم') }}
                 @endif

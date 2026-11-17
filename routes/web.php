@@ -28,20 +28,20 @@ foreach (['image', 'video', 'audio', 'document'] as $cat) {
     Route::redirect("/{$cat}.php", "/{$cat}");
 }
 
-// واجهة معالجة الملفات وتسجيل العمليات
-Route::post('/api/process', [ToolController::class, 'process'])->name('api.process');
-Route::post('/api/process.php', [ToolController::class, 'process']);
-Route::post('/api/log', [ToolController::class, 'log'])->name('api.log');
-Route::post('/api/log.php', [ToolController::class, 'log']);
+// واجهة معالجة الملفات وتسجيل العمليات (مع حماية Rate Limit ضد الإغراق)
+Route::post('/api/process', [ToolController::class, 'process'])->middleware('throttle:30,1')->name('api.process');
+Route::post('/api/process.php', [ToolController::class, 'process'])->middleware('throttle:30,1');
+Route::post('/api/log', [ToolController::class, 'log'])->middleware('throttle:60,1')->name('api.log');
+Route::post('/api/log.php', [ToolController::class, 'log'])->middleware('throttle:60,1');
 
-// المشاركة السريعة (رابط + QR)
+// المشاركة السريعة (رابط + QR) — حد أقصى 10 رفعات في الدقيقة لكل مستخدم/IP
 Route::get('/share', [ShareController::class, 'create'])->name('shares.create');
-Route::post('/share', [ShareController::class, 'store'])->name('shares.store');
+Route::post('/share', [ShareController::class, 'store'])->middleware('throttle:10,1')->name('shares.store');
 Route::redirect('/share.php', '/share');
-Route::post('/share.php', [ShareController::class, 'store']);
+Route::post('/share.php', [ShareController::class, 'store'])->middleware('throttle:10,1');
 
 Route::get('/f/{token}', [ShareController::class, 'show'])->where('token', '[a-f0-9]{16}')->name('shares.show');
-Route::post('/f/{token}', [ShareController::class, 'unlock'])->where('token', '[a-f0-9]{16}')->name('shares.unlock');
+Route::post('/f/{token}', [ShareController::class, 'unlock'])->where('token', '[a-f0-9]{16}')->middleware('throttle:10,1')->name('shares.unlock');
 Route::get('/f.php', [ShareController::class, 'show']);
 
 Route::get('/download/{token}', [ShareController::class, 'download'])->where('token', '[a-f0-9]{16}')->name('shares.download');
@@ -49,11 +49,11 @@ Route::get('/download.php', [ShareController::class, 'download']);
 
 // المصادقة (تسجيل الدخول وإنشاء الحساب)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.store');
 Route::redirect('/login.php', '/login');
 
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.store');
 Route::redirect('/register.php', '/register');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

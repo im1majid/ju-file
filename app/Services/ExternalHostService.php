@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Http;
 class ExternalHostService
 {
     /**
-     * رفع الملف إلى خدمة استضافة عامة لإرجاع رابط خارجي حقيقي (وليس localhost).
-     * يحاول x0.at ثم uguu.se ثم tmpfiles.org بالترتيب.
+     * رفع الملف إلى Cloudinary أولاً (تخزين دائم) ثم استضافات مجانية مؤقتة كاحتياط.
      */
     public function upload(string $filePath, string $originalName): ?string
     {
@@ -19,7 +18,12 @@ class ExternalHostService
             return null;
         }
 
-        // 1) x0.at
+        // 1) Cloudinary (التخزين الدائم المعتمد عند ضبط المفاتيح)
+        if ($cloudinaryUrl = $this->uploadToCloudinary($contents, $cleanName)) {
+            return $cloudinaryUrl;
+        }
+
+        // 2) x0.at
         $res = $this->postFile('https://x0.at', 'file', $contents, $cleanName, ['User-Agent' => 'curl/8.5.0']);
         if ($res && $res->successful()) {
             $body = trim($res->body());
@@ -28,7 +32,7 @@ class ExternalHostService
             }
         }
 
-        // 2) uguu.se
+        // 3) uguu.se
         $res = $this->postFile('https://uguu.se/upload', 'files[]', $contents, $cleanName);
         if ($res && $res->successful()) {
             $url = $res->json('files.0.url');
@@ -37,7 +41,7 @@ class ExternalHostService
             }
         }
 
-        // 3) tmpfiles.org
+        // 4) tmpfiles.org
         $res = $this->postFile('https://tmpfiles.org/api/v1/upload', 'file', $contents, $cleanName);
         if ($res && $res->successful()) {
             $url = $res->json('data.url');
@@ -49,17 +53,55 @@ class ExternalHostService
         return null;
     }
 
-    private function postFile(string $url, string $field, string $contents, string $filename, array $headers = []): ?Response
+    private function uploadToCloudinary(string $contents, string $filename): ?string
     {
+        $cloud  = trim((string) config('services.cloudinary.cloud_name'));
+        $key    = trim((string) config('services.cloudinary.api_key'));
+        $secret = trim((string) config('services.cloudinary.api_secret'));
+        $folder = trim((string) config('services.cloudinary.folder', 'ju-file')) ?: 'ju-file';
+
+        if ($cloud === '' || $key === '' || $secret === '') {
+            return null;
+        }
+
+        $timestamp = time();
+        $signature = sha1("folder={$folder}&timestamp={$timestamp}{$secret}");
+        $endpoint  = "https://api.cloudinary.com/v1_1/{$cloud}/auto/upload";
+
+        $res = $this->postFile($endpoint, 'file', $contents, $filename, [], [
+            'api_key'   => $key,
+            'folder'    => $folder,
+            'timestamp' => (string) $timestamp,
+            'signature' => $signature,
+        ], 60);
+
+        if ($res && $res->successful()) {
+            $url = $res->json('secure_url');
+            if (is_string($url) && str_starts_with($url, 'https://')) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
+    private function postFile(
+        string $url,
+        string $field,
+        string $contents,
+        string $filename,
+        array $headers = [],
+        array $extraFields = [],
+        int $timeout = 25
+    ): ?Response {
         foreach ([true, false] as $verify) {
             try {
-                $client = Http::timeout(25)->withHeaders($headers);
+                $client = Http::timeout($timeout)->withHeaders($headers);
                 if (!$verify) {
                     $client = $client->withoutVerifying();
                 }
-                return $client->attach($field, $contents, $filename)->post($url);
+                return $client->attach($field, $contents, $filename)->post($url, $extraFields);
             } catch (\Throwable $e) {
-                // في بيئة ويندوز المحلية قد لا يكون ملف شهادات CA مفعّلاً في php.ini
                 if ($verify && str_contains($e->getMessage(), 'cURL error 60')) {
                     continue;
                 }

@@ -157,7 +157,7 @@ class ShareController extends Controller
         return redirect()->route('shares.show', $token);
     }
 
-    public function download(Request $request, ?string $token = null): BinaryFileResponse
+    public function download(Request $request, ?string $token = null): BinaryFileResponse|RedirectResponse
     {
         $token = $token ?? (string) $request->query('t', '');
         $share = $this->findByToken($token);
@@ -168,10 +168,19 @@ class ShareController extends Controller
             || (bool) session("unlocked.{$share->token}", false);
         abort_unless($unlocked, 403, 'هذا الملف محمي بكلمة مرور.');
 
-        $path = storage_path('app/uploads/' . $share->stored_name);
-        abort_unless(is_file($path), 404, 'الملف غير موجود على الخادم.');
-
         $inline = $request->boolean('inline') && preg_match('#^(image/(jpeg|png|gif|webp)|video/|audio/)#', $share->mime);
+        $path = storage_path('app/uploads/' . $share->stored_name);
+
+        if (!is_file($path)) {
+            if ($share->external_url) {
+                if (!$inline) {
+                    $share->increment('downloads');
+                }
+                return redirect()->away($share->external_url);
+            }
+            abort(404, 'الملف غير موجود على الخادم.');
+        }
+
         if (!$inline) {
             $share->increment('downloads');
         }

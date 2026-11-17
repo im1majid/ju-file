@@ -73,9 +73,20 @@ window.JU_MEDIA = (() => {
                 }
                 case 'crop': {
                     outExt = 'mp4';
-                    const ratio = formData.get('ratio') || '9:16';
-                    args = ['-i', inName, '-vf', cropFilter(ratio), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'copy'];
-                    suffix = ratio.replace(':', 'x');
+                    const cw = Number(formData.get('width') || 0);
+                    const ch = Number(formData.get('height') || 0);
+                    if (cw > 0 && ch > 0) {
+                        const x = Math.max(0, Math.floor(Number(formData.get('x') || 0) / 2) * 2);
+                        const y = Math.max(0, Math.floor(Number(formData.get('y') || 0) / 2) * 2);
+                        const w = Math.max(2, Math.floor(cw / 2) * 2);
+                        const h = Math.max(2, Math.floor(ch / 2) * 2);
+                        args = ['-i', inName, '-vf', `crop=${w}:${h}:${x}:${y}`, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'copy'];
+                        suffix = `${w}x${h}`;
+                    } else {
+                        const ratio = formData.get('ratio') || '9:16';
+                        args = ['-i', inName, '-vf', cropFilter(ratio), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'copy'];
+                        suffix = ratio.replace(':', 'x');
+                    }
                     break;
                 }
                 case 'convert': {

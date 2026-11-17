@@ -93,10 +93,13 @@ class ToolCatalog
                         'fields' => [$start, $end, ['name' => 'fast', 'label' => 'قص سريع بدون إعادة ترميز (أقل دقة)', 'type' => 'checkbox', 'value' => true]],
                     ],
                     'crop' => [
-                        'title' => 'قص أبعاد الفيديو', 'icon' => 'bi-crop', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'غيّر نسبة الإطار لتناسب الستوري أو الريلز أو يوتيوب.',
+                        'title' => 'قص أبعاد الفيديو', 'icon' => 'bi-crop', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'crop_ui' => true,
+                        'desc' => 'اسحب على الفيديو لتحديد الإطار المطلوب قصّه أو اختر نسبة جاهزة.',
                         'fields' => [
-                            ['name' => 'ratio', 'label' => 'النسبة', 'type' => 'select', 'value' => '9:16', 'options' => ['9:16' => '9:16 (ستوري / ريلز)', '1:1' => '1:1 (مربع)', '4:5' => '4:5 (منشور)', '16:9' => '16:9 (عريض)', '4:3' => '4:3']],
+                            ['name' => 'x', 'label' => 'من اليسار X', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'y', 'label' => 'من الأعلى Y', 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 0],
+                            ['name' => 'width', 'label' => 'العرض', 'type' => 'number', 'min' => 2, 'max' => 20000],
+                            ['name' => 'height', 'label' => 'الارتفاع', 'type' => 'number', 'min' => 2, 'max' => 20000],
                         ],
                     ],
                     'convert' => [

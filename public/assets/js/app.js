@@ -289,10 +289,36 @@
         if (selectedFiles.length === 1 && (f.type.startsWith('video/') || f.type.startsWith('audio/'))) {
             const url = URL.createObjectURL(f);
             objectUrls.push(url);
-            const el = document.createElement(f.type.startsWith('video/') ? 'video' : 'audio');
+            const isVideo = f.type.startsWith('video/');
+            const el = document.createElement(isVideo ? 'video' : 'audio');
             el.src = url;
-            el.controls = true;
-            el.className = f.type.startsWith('video/') ? 'preview-media' : 'w-100';
+            el.controls = !(isVideo && t.cropUi);
+            el.className = isVideo ? (t.cropUi ? '' : 'preview-media') : 'w-100';
+
+            if (isVideo && t.cropUi) {
+                const wrap = document.createElement('div');
+                wrap.className = 'text-center';
+                const stage = document.createElement('div');
+                stage.className = 'crop-stage';
+                stage.appendChild(el);
+
+                const playBtn = document.createElement('button');
+                playBtn.type = 'button';
+                playBtn.className = 'btn btn-light btn-sm mt-2';
+                playBtn.innerHTML = '<i class="bi bi-play-fill"></i> تشغيل / إيقاف المعاينة';
+                playBtn.onclick = () => { if (el.paused) el.play(); else el.pause(); };
+
+                const meta = document.createElement('div');
+                meta.className = 'small text-secondary mt-2 text-center';
+                el.onloadedmetadata = () => {
+                    meta.textContent = `${f.name} · ${el.videoWidth}×${el.videoHeight}px · ${fmtBytes(f.size)}`;
+                    initCropBox(stage, el);
+                };
+                wrap.append(stage, document.createElement('br'), playBtn, meta);
+                preview.append(wrap);
+                return;
+            }
+
             el.onloadedmetadata = () => {
                 const dur = el.duration;
                 if (Number.isFinite(dur) && dur > 0) {
@@ -442,8 +468,10 @@
             y = Math.max(0, Math.min(maxH - h, y));
             cur = { x, y, w, h };
 
-            const sx = img.naturalWidth / maxW;
-            const sy = img.naturalHeight / maxH;
+            const naturalW = img.videoWidth || img.naturalWidth;
+            const naturalH = img.videoHeight || img.naturalHeight;
+            const sx = naturalW / maxW;
+            const sy = naturalH / maxH;
             const nx = Math.max(0, Math.round(x * sx));
             const ny = Math.max(0, Math.round(y * sy));
             const nw = Math.max(1, Math.round(w * sx));

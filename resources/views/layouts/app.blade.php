@@ -152,15 +152,22 @@
 </main>
 
 <footer class="border-top py-4 mt-5 bg-white">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-secondary">
-        <div><i class="bi bi-folder2-open text-accent"></i> <strong>{{ config('app.name') }}</strong> — {{ __('كل أدوات ملفاتك في مكان واحد') }}</div>
-        <nav class="d-flex gap-3">
-            @foreach($navCategories as $navKey => $footerCat)
-                <a class="link-secondary text-decoration-none" href="{{ route('tools.' . $navKey) }}">{{ $footerCat['title'] }}</a>
-            @endforeach
-            <a class="link-secondary text-decoration-none" href="{{ route('shares.create') }}">{{ __('المشاركة') }}</a>
-        </nav>
-        <div>&copy; {{ date('Y') }}</div>
+    <div class="container">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-secondary">
+            <div><i class="bi bi-folder2-open text-accent"></i> <strong>{{ config('app.name') }}</strong> — {{ __('كل أدوات ملفاتك في مكان واحد') }}</div>
+            <nav class="d-flex gap-3">
+                @foreach($navCategories as $navKey => $footerCat)
+                    <a class="link-secondary text-decoration-none" href="{{ route('tools.' . $navKey) }}">{{ $footerCat['title'] }}</a>
+                @endforeach
+                <a class="link-secondary text-decoration-none" href="{{ route('shares.create') }}">{{ __('المشاركة') }}</a>
+            </nav>
+            <div>&copy; {{ date('Y') }}</div>
+        </div>
+        <div class="border-top mt-3 pt-3 text-center small text-secondary" dir="ltr">
+            <i class="bi bi-mortarboard text-accent me-1"></i>
+            This website was created by <strong class="text-body">Dr. Malkadi</strong> students —
+            The students: <span class="text-accent fw-semibold">Majid Hamitai</span> &amp; <span class="text-accent fw-semibold">Majid Kamli</span>
+        </div>
     </div>
 </footer>
 

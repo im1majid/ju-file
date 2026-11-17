@@ -15,6 +15,7 @@
             'accept' => $t['accept'],
             'multi'  => $t['multi'] ?? false,
             'cropUi' => $t['crop_ui'] ?? false,
+            'trimUi' => $t['trim_ui'] ?? false,
         ], $tools),
     ];
 @endphp
@@ -77,6 +78,41 @@
                                     <div class="col-6">
                                         <x-tool-field :field="$field" :tool-key="$key" />
                                     </div>
+                                @endforeach
+                            </div>
+                        </details>
+                    @elseif(!empty($t['trim_ui']))
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center small mb-2">
+                                <span class="text-secondary"><i class="bi bi-sliders text-accent"></i> اسحب لتحديد المقطع</span>
+                                <strong id="trimReadout-{{ $key }}" dir="ltr">ارفع ملفاً أولاً</strong>
+                            </div>
+                            <div class="trim-track" data-trim-track="{{ $key }}" dir="ltr">
+                                <div class="trim-range"></div>
+                                <span class="trim-handle" data-trim-edge="start" title="البداية"></span>
+                                <span class="trim-handle" data-trim-edge="end" title="النهاية"></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <button type="button" class="btn btn-light btn-sm" data-trim-preview="{{ $key }}" disabled>
+                                    <i class="bi bi-play-circle"></i> معاينة المقطع المحدد
+                                </button>
+                                <span class="small text-secondary" id="trimDur-{{ $key }}"></span>
+                            </div>
+                        </div>
+                        @foreach($t['fields'] as $field)
+                            @if($field['type'] === 'checkbox')
+                                <x-tool-field :field="$field" :tool-key="$key" />
+                            @endif
+                        @endforeach
+                        <details class="mb-3 small">
+                            <summary class="text-secondary" style="cursor:pointer">تعديل الثواني يدوياً (اختياري)</summary>
+                            <div class="row g-2 mt-1">
+                                @foreach($t['fields'] as $field)
+                                    @if($field['type'] !== 'checkbox')
+                                        <div class="col-6">
+                                            <x-tool-field :field="$field" :tool-key="$key" />
+                                        </div>
+                                    @endif
                                 @endforeach
                             </div>
                         </details>

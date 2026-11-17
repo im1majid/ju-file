@@ -447,3 +447,39 @@ main { flex: 1; }
     border-color: var(--accent-btn-border) !important;
     color: var(--accent-contrast) !important;
 }
+
+/* شريط قص الفيديو والصوت بالماوس */
+.trim-track {
+    position: relative;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    margin: 10px 6px;
+    user-select: none;
+    touch-action: none;
+}
+.trim-range {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    background: var(--accent-btn);
+    border-radius: 999px;
+    opacity: .85;
+}
+.trim-handle {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #ffffff;
+    transform: translate(-50%, -50%);
+    cursor: ew-resize;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    z-index: 2;
+}
+.trim-handle:hover, .trim-handle:active {
+    transform: translate(-50%, -50%) scale(1.15);
+}

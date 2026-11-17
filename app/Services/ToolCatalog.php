@@ -88,8 +88,8 @@ class ToolCatalog
                         ],
                     ],
                     'trim' => [
-                        'title' => 'قص جزء من الفيديو', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $videoExt,
-                        'desc' => 'احتفظ بمقطع محدد بين نقطتي البداية والنهاية.',
+                        'title' => 'قص جزء من الفيديو', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $videoExt, 'trim_ui' => true,
+                        'desc' => 'اسحب مقبضي البداية والنهاية لتحديد المقطع المطلوب.',
                         'fields' => [$start, $end, ['name' => 'fast', 'label' => 'قص سريع بدون إعادة ترميز (أقل دقة)', 'type' => 'checkbox', 'value' => true]],
                     ],
                     'crop' => [
@@ -140,8 +140,8 @@ class ToolCatalog
                         ],
                     ],
                     'trim' => [
-                        'title' => 'قص مقطع صوتي', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $audioExt,
-                        'desc' => 'احتفظ بجزء محدد من الملف الصوتي.', 'fields' => [$start, $end],
+                        'title' => 'قص مقطع صوتي', 'icon' => 'bi-scissors', 'engine' => 'ffmpeg', 'accept' => $audioExt, 'trim_ui' => true,
+                        'desc' => 'اسحب مقبضي البداية والنهاية لتحديد المقطع الصوتي.', 'fields' => [$start, $end],
                     ],
                     'volume' => [
                         'title' => 'رفع أو خفض الصوت', 'icon' => 'bi-volume-up', 'engine' => 'ffmpeg', 'accept' => $audioExt,

@@ -295,10 +295,11 @@
             el.className = f.type.startsWith('video/') ? 'preview-media' : 'w-100';
             el.onloadedmetadata = () => {
                 const dur = el.duration;
-                if (Number.isFinite(dur)) {
+                if (Number.isFinite(dur) && dur > 0) {
                     document.querySelectorAll(`#form-${activeTool} input[name="end"]`).forEach((inp) => {
                         inp.value = Math.max(0.1, Number(dur.toFixed(1)));
                     });
+                    initTrimTimeline(activeTool, dur, el);
                 }
             };
             const meta = document.createElement('div');
@@ -326,6 +327,93 @@
             ul.appendChild(li);
         });
         preview.appendChild(ul);
+    }
+
+    function fmtSec(s) {
+        s = Math.max(0, Number(s) || 0);
+        const m = Math.floor(s / 60);
+        const rem = (s % 60).toFixed(1).padStart(4, '0');
+        return `${String(m).padStart(2, '0')}:${rem}`;
+    }
+
+    function initTrimTimeline(toolKey, dur, mediaEl) {
+        const track = document.querySelector(`[data-trim-track="${toolKey}"]`);
+        const form = document.getElementById(`form-${toolKey}`);
+        if (!track || !form) return;
+
+        const rangeBar = track.querySelector('.trim-range');
+        const hStart = track.querySelector('[data-trim-edge="start"]');
+        const hEnd = track.querySelector('[data-trim-edge="end"]');
+        const readout = document.getElementById(`trimReadout-${toolKey}`);
+        const durBadge = document.getElementById(`trimDur-${toolKey}`);
+        const prevBtn = document.querySelector(`[data-trim-preview="${toolKey}"]`);
+
+        let start = 0;
+        let end = Number(dur.toFixed(1));
+        const minGap = Math.min(0.5, dur * 0.1);
+
+        const sync = (seekTo = null) => {
+            start = Math.max(0, Math.min(end - minGap, start));
+            end = Math.min(dur, Math.max(start + minGap, end));
+            const p1 = (start / dur) * 100;
+            const p2 = (end / dur) * 100;
+
+            hStart.style.left = `${p1}%`;
+            hEnd.style.left = `${p2}%`;
+            rangeBar.style.left = `${p1}%`;
+            rangeBar.style.width = `${p2 - p1}%`;
+
+            form.elements.start.value = start.toFixed(1);
+            form.elements.end.value = end.toFixed(1);
+            if (readout) readout.textContent = `${fmtSec(start)} → ${fmtSec(end)}`;
+            if (durBadge) durBadge.textContent = `المدة: ${(end - start).toFixed(1)} ثانية`;
+            if (seekTo !== null && mediaEl) mediaEl.currentTime = seekTo;
+        };
+
+        sync();
+        if (prevBtn) {
+            prevBtn.disabled = false;
+            prevBtn.onclick = () => {
+                if (!mediaEl) return;
+                mediaEl.currentTime = start;
+                mediaEl.play();
+                const stopAtEnd = () => {
+                    if (mediaEl.currentTime >= end) {
+                        mediaEl.pause();
+                        mediaEl.removeEventListener('timeupdate', stopAtEnd);
+                    }
+                };
+                mediaEl.addEventListener('timeupdate', stopAtEnd);
+            };
+        }
+
+        let activeEdge = null;
+        track.onpointerdown = (e) => {
+            e.preventDefault();
+            const r = track.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+            const t = ratio * dur;
+            const edgeEl = e.target.closest('[data-trim-edge]');
+            if (edgeEl) {
+                activeEdge = edgeEl.dataset.trimEdge;
+            } else {
+                activeEdge = Math.abs(t - start) < Math.abs(t - end) ? 'start' : 'end';
+                if (activeEdge === 'start') start = t; else end = t;
+                sync(t);
+            }
+            track.setPointerCapture(e.pointerId);
+        };
+
+        track.onpointermove = (e) => {
+            if (!activeEdge) return;
+            const r = track.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+            const t = ratio * dur;
+            if (activeEdge === 'start') start = t; else end = t;
+            sync(t);
+        };
+
+        track.onpointerup = () => { activeEdge = null; };
     }
 
     function initCropBox(stage, img) {

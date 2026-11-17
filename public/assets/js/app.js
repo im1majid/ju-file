@@ -314,45 +314,137 @@
     function initCropBox(stage, img) {
         const form = document.getElementById('form-crop');
         if (!form) return;
+
+        const readout = document.getElementById('cropReadout');
+        const ratioBtns = [...form.querySelectorAll('[data-crop-ratio]')];
+        let aspect = null; // null = حر
+
         const box = document.createElement('div');
         box.className = 'crop-box';
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach((dir) => {
+            const h = document.createElement('span');
+            h.className = 'crop-handle';
+            h.dataset.dir = dir;
+            box.appendChild(h);
+        });
         stage.appendChild(box);
 
-        const setFields = (x, y, w, h) => {
-            const sx = img.naturalWidth / img.clientWidth;
-            const sy = img.naturalHeight / img.clientHeight;
-            form.elements.x.value = Math.max(0, Math.round(x * sx));
-            form.elements.y.value = Math.max(0, Math.round(y * sy));
-            form.elements.width.value = Math.max(1, Math.round(w * sx));
-            form.elements.height.value = Math.max(1, Math.round(h * sy));
+        let cur = { x: 0, y: 0, w: 0, h: 0 };
+
+        const applyBox = (x, y, w, h) => {
+            const maxW = img.clientWidth, maxH = img.clientHeight;
+            w = Math.max(16, Math.min(maxW, w));
+            h = Math.max(16, Math.min(maxH, h));
+            x = Math.max(0, Math.min(maxW - w, x));
+            y = Math.max(0, Math.min(maxH - h, y));
+            cur = { x, y, w, h };
+
+            const sx = img.naturalWidth / maxW;
+            const sy = img.naturalHeight / maxH;
+            const nx = Math.max(0, Math.round(x * sx));
+            const ny = Math.max(0, Math.round(y * sy));
+            const nw = Math.max(1, Math.round(w * sx));
+            const nh = Math.max(1, Math.round(h * sy));
+
+            form.elements.x.value = nx;
+            form.elements.y.value = ny;
+            form.elements.width.value = nw;
+            form.elements.height.value = nh;
+            if (readout) readout.textContent = `${nw} × ${nh} px`;
+
             box.style.left = `${x}px`;
             box.style.top = `${y}px`;
             box.style.width = `${w}px`;
             box.style.height = `${h}px`;
         };
 
-        // مستطيل ابتدائي في المنتصف
-        requestAnimationFrame(() => {
-            const w = img.clientWidth, h = img.clientHeight;
-            setFields(w * 0.1, h * 0.1, w * 0.8, h * 0.8);
+        const fitAspect = (ratio) => {
+            const maxW = img.clientWidth, maxH = img.clientHeight;
+            let w = maxW * 0.8, h = maxH * 0.8;
+            if (ratio) {
+                if (w / h > ratio) w = h * ratio;
+                else h = w / ratio;
+            }
+            applyBox((maxW - w) / 2, (maxH - h) / 2, w, h);
+        };
+
+        ratioBtns.forEach((btn) => {
+            btn.onclick = () => {
+                ratioBtns.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                const val = btn.dataset.cropRatio;
+                if (val === 'free') {
+                    aspect = null;
+                } else {
+                    const [rw, rh] = val.split(':').map(Number);
+                    aspect = rw / rh;
+                    fitAspect(aspect);
+                }
+            };
         });
 
-        let start = null;
+        requestAnimationFrame(() => fitAspect(null));
+
+        let drag = null;
         stage.onpointerdown = (e) => {
+            e.preventDefault();
             const r = img.getBoundingClientRect();
-            start = { x: Math.max(0, Math.min(r.width, e.clientX - r.left)), y: Math.max(0, Math.min(r.height, e.clientY - r.top)) };
+            const px = Math.max(0, Math.min(r.width, e.clientX - r.left));
+            const py = Math.max(0, Math.min(r.height, e.clientY - r.top));
+            const handle = e.target.closest('.crop-handle');
+            if (handle) {
+                drag = { mode: handle.dataset.dir, px, py, start: { ...cur } };
+            } else if (e.target === box) {
+                drag = { mode: 'move', px, py, start: { ...cur } };
+            } else {
+                drag = { mode: 'draw', px, py, start: { x: px, y: py, w: 16, h: 16 } };
+            }
             stage.setPointerCapture(e.pointerId);
         };
+
         stage.onpointermove = (e) => {
-            if (!start) return;
+            if (!drag) return;
             const r = img.getBoundingClientRect();
             const cx = Math.max(0, Math.min(r.width, e.clientX - r.left));
             const cy = Math.max(0, Math.min(r.height, e.clientY - r.top));
-            const x = Math.min(start.x, cx), y = Math.min(start.y, cy);
-            const w = Math.max(4, Math.abs(cx - start.x)), h = Math.max(4, Math.abs(cy - start.y));
-            setFields(x, y, w, h);
+            const dx = cx - drag.px, dy = cy - drag.py;
+            const s = drag.start;
+
+            if (drag.mode === 'move') {
+                applyBox(s.x + dx, s.y + dy, s.w, s.h);
+                return;
+            }
+            if (drag.mode === 'draw') {
+                let w = Math.max(16, Math.abs(dx));
+                let h = aspect ? w / aspect : Math.max(16, Math.abs(dy));
+                if (h > r.height) { h = r.height; if (aspect) w = h * aspect; }
+                const x = dx < 0 ? Math.max(0, drag.px - w) : drag.px;
+                const y = dy < 0 ? Math.max(0, drag.py - h) : drag.py;
+                applyBox(x, y, w, h);
+                return;
+            }
+
+            let { x, y, w, h } = s;
+            if (drag.mode.includes('e')) w = Math.max(16, Math.min(r.width - x, s.w + dx));
+            if (drag.mode.includes('s')) h = Math.max(16, Math.min(r.height - y, s.h + dy));
+            if (drag.mode.includes('w')) {
+                const nx = Math.max(0, Math.min(s.x + s.w - 16, s.x + dx));
+                w = s.x + s.w - nx;
+                x = nx;
+            }
+            if (drag.mode.includes('n')) {
+                const ny = Math.max(0, Math.min(s.y + s.h - 16, s.y + dy));
+                h = s.y + s.h - ny;
+                y = ny;
+            }
+            if (aspect) {
+                if (drag.mode === 'n' || drag.mode === 's') w = h * aspect;
+                else h = w / aspect;
+            }
+            applyBox(x, y, w, h);
         };
-        stage.onpointerup = () => { start = null; };
+
+        stage.onpointerup = () => { drag = null; };
     }
 
     /* ---------------- تشغيل الأدوات وعرض النتيجة ---------------- */

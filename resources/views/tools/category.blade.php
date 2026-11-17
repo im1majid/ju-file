@@ -57,9 +57,34 @@
 
             @foreach($tools as $key => $t)
                 <form class="tool-form {{ $key === $firstKey ? '' : 'd-none' }}" id="form-{{ $key }}" data-tool="{{ $key }}" enctype="multipart/form-data" novalidate>
-                    @foreach($t['fields'] as $field)
-                        <x-tool-field :field="$field" :tool-key="$key" />
-                    @endforeach
+                    @if(!empty($t['crop_ui']))
+                        <div class="mb-3">
+                            <label class="form-label d-block">نسبة القص</label>
+                            <div class="d-flex flex-wrap gap-1" id="cropRatios">
+                                @foreach(['free' => 'حر', '1:1' => '1:1 مربع', '16:9' => '16:9', '9:16' => '9:16', '4:3' => '4:3', '4:5' => '4:5'] as $rk => $rl)
+                                    <button type="button" class="btn btn-light btn-sm {{ $rk === 'free' ? 'active' : '' }}" data-crop-ratio="{{ $rk }}">{{ $rl }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="p-2 px-3 rounded-3 bg-light border d-flex justify-content-between align-items-center small mb-3">
+                            <span class="text-secondary"><i class="bi bi-bounding-box text-accent"></i> التحديد بالماوس</span>
+                            <strong id="cropReadout" dir="ltr">اسحب على الصورة</strong>
+                        </div>
+                        <details class="mb-3 small">
+                            <summary class="text-secondary" style="cursor:pointer">تعديل القياسات يدوياً (اختياري)</summary>
+                            <div class="row g-2 mt-1">
+                                @foreach($t['fields'] as $field)
+                                    <div class="col-6">
+                                        <x-tool-field :field="$field" :tool-key="$key" />
+                                    </div>
+                                @endforeach
+                            </div>
+                        </details>
+                    @else
+                        @foreach($t['fields'] as $field)
+                            <x-tool-field :field="$field" :tool-key="$key" />
+                        @endforeach
+                    @endif
 
                     <button type="submit" class="btn btn-accent w-100 py-2" disabled>
                         <i class="bi bi-play-fill"></i> تنفيذ الأداة

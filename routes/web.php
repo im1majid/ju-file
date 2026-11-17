@@ -16,6 +16,25 @@ Route::get('/lang/{locale}', function (string $locale) {
     return redirect()->back(fallback: route('home'));
 })->whereIn('locale', ['ar', 'en'])->name('locale.switch');
 
+// خريطة الموقع لمحركات البحث (Google SEO)
+Route::get('/sitemap.xml', function () {
+    $urls = [
+        route('home'),
+        route('tools.image'),
+        route('tools.video'),
+        route('tools.audio'),
+        route('tools.document'),
+        route('shares.create'),
+    ];
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+         . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach ($urls as $u) {
+        $xml .= '  <url><loc>' . htmlspecialchars($u, ENT_XML1) . '</loc><changefreq>weekly</changefreq></url>' . "\n";
+    }
+    $xml .= '</urlset>';
+    return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+})->name('sitemap');
+
 // الصفحة الرئيسية
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::redirect('/index.php', '/');

@@ -65,7 +65,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name')) · {{ config('app.name') }}</title>
+    @php
+        $metaTitle = trim($__env->yieldContent('title', config('app.name'))) . ' · ' . config('app.name');
+        $metaDesc  = __('منصة متخصصة لتعديل الملفات، تحويل الصيغ، وتصغير الحجم — مع إمكانية تحويل أي ملف إلى رابط مباشر أو رمز QR للمشاركة السريعة.');
+    @endphp
+    <title>{{ $metaTitle }}</title>
+    <meta name="description" content="{{ $metaDesc }}">
+    <meta name="theme-color" content="#0d6e66">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- أيقونات المتصفح ونتائج بحث قوقل -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('assets/img/icon-48.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('assets/img/icon-192.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/icon.svg') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/img/apple-touch-icon.png') }}">
+
+    <!-- Open Graph / Twitter للمشاركات وقوقل -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name') }}">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDesc }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('assets/img/og-cover.png') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDesc }}">
+    <meta name="twitter:image" content="{{ asset('assets/img/og-cover.png') }}">
+
+    @verbatim
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebSite","name":"Ju File","url":"https://jufile.win"}
+    </script>
+    @endverbatim
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
     @if($isRtl)

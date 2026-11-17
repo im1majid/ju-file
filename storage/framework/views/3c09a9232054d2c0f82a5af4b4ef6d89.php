@@ -65,7 +65,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo $__env->yieldContent('title', config('app.name')); ?> · <?php echo e(config('app.name')); ?></title>
+    <?php
+        $metaTitle = trim($__env->yieldContent('title', config('app.name'))) . ' · ' . config('app.name');
+        $metaDesc  = __('منصة متخصصة لتعديل الملفات، تحويل الصيغ، وتصغير الحجم — مع إمكانية تحويل أي ملف إلى رابط مباشر أو رمز QR للمشاركة السريعة.');
+    ?>
+    <title><?php echo e($metaTitle); ?></title>
+    <meta name="description" content="<?php echo e($metaDesc); ?>">
+    <meta name="theme-color" content="#0d6e66">
+    <link rel="canonical" href="<?php echo e(url()->current()); ?>">
+
+    <!-- أيقونات المتصفح ونتائج بحث قوقل -->
+    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('favicon.ico')); ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?php echo e(asset('assets/img/icon-48.png')); ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?php echo e(asset('assets/img/icon-192.png')); ?>">
+    <link rel="icon" type="image/svg+xml" href="<?php echo e(asset('assets/img/icon.svg')); ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo e(asset('assets/img/apple-touch-icon.png')); ?>">
+
+    <!-- Open Graph / Twitter للمشاركات وقوقل -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<?php echo e(config('app.name')); ?>">
+    <meta property="og:title" content="<?php echo e($metaTitle); ?>">
+    <meta property="og:description" content="<?php echo e($metaDesc); ?>">
+    <meta property="og:url" content="<?php echo e(url()->current()); ?>">
+    <meta property="og:image" content="<?php echo e(asset('assets/img/og-cover.png')); ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo e($metaTitle); ?>">
+    <meta name="twitter:description" content="<?php echo e($metaDesc); ?>">
+    <meta name="twitter:image" content="<?php echo e(asset('assets/img/og-cover.png')); ?>">
+
+    
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebSite","name":"Ju File","url":"https://jufile.win"}
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
     <?php if($isRtl): ?>

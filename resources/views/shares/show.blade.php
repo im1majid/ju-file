@@ -1,9 +1,37 @@
 @extends('layouts.app')
 
-@section('title', $share ? ($share->title ?: $share->original_name) : __('ملف غير موجود'))
+@section('title', !empty($needsLock) ? __('ملف محمي بكلمة مرور') : ($share ? ($share->title ?: $share->original_name) : __('ملف غير موجود')))
 
 @section('content')
-@if(!$share || $expired)
+@if(!empty($needsLock))
+    <div class="auth-card panel mx-auto" style="max-width:480px">
+        <div class="text-center mb-3">
+            <div class="cat-icon mx-auto mb-2"><i class="bi bi-lock-fill"></i></div>
+            <h1 class="h5 fw-bold mb-1">{{ __('الوصول إلى ملف مشارك') }}</h1>
+            <p class="small text-secondary mb-0">{{ __('أدخل رمز الملف وكلمة المرور لفتح الملف وتنزيله.') }}</p>
+        </div>
+
+        <form method="post" action="{{ route('shares.unlock') }}" novalidate>
+            @csrf
+            <div class="mb-3">
+                <label class="form-label" for="token">{{ __('رمز الملف (16 حرفاً)') }}</label>
+                <input type="text" class="form-control @error('token') is-invalid @enderror" id="token" name="token"
+                       value="{{ old('token') }}" dir="ltr" placeholder="a1b2c3d4e5f60708" required>
+                @error('token')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password">{{ __('كلمة المرور') }}</label>
+                <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
+                @error('password')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            <button class="btn btn-accent w-100"><i class="bi bi-unlock"></i> {{ __('فتح الملف') }}</button>
+        </form>
+    </div>
+@elseif(!$share || $expired)
     <div class="panel text-center py-5 mx-auto" style="max-width:520px">
         <i class="bi bi-file-earmark-x display-4 text-secondary"></i>
         <h1 class="h4 fw-bold mt-3">{{ $share ? __('انتهت صلاحية هذا الرابط') : __('الملف غير موجود') }}</h1>
@@ -26,13 +54,16 @@
                 </div>
 
                 @if(!$unlocked)
-                    <form method="post" action="{{ route('shares.unlock', $share->token) }}" class="border rounded-3 p-3 bg-light">
+                    <form method="post" action="{{ route('shares.unlock', $share->token) }}" class="border rounded-3 p-3 bg-light" novalidate>
                         @csrf
                         <label class="form-label fw-bold" for="password"><i class="bi bi-lock"></i> {{ __('هذا الملف محمي بكلمة مرور') }}</label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="password" name="password" required autofocus>
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required autofocus>
                             <button class="btn btn-accent">{{ __('فتح') }}</button>
                         </div>
+                        @error('password')
+                            <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                        @enderror
                     </form>
                 @else
                     @if($previewable === 'img')

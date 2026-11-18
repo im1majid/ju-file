@@ -10,13 +10,16 @@
         'category'  => $category,
         'maxUpload' => $maxUploadBytes,
         'tools'     => array_map(fn ($t) => [
-            'title'  => $t['title'],
-            'desc'   => $t['desc'],
-            'engine' => $t['engine'],
-            'accept' => $t['accept'],
-            'multi'  => $t['multi'] ?? false,
-            'cropUi' => $t['crop_ui'] ?? false,
-            'trimUi' => $t['trim_ui'] ?? false,
+            'title'    => $t['title'],
+            'desc'     => $t['desc'],
+            'engine'   => $t['engine'],
+            'accept'   => $t['accept'],
+            'multi'    => $t['multi'] ?? false,
+            'cropUi'   => $t['crop_ui'] ?? false,
+            'trimUi'   => $t['trim_ui'] ?? false,
+            'resizeUi' => $t['resize_ui'] ?? false,
+            'filterUi' => $t['filter_ui'] ?? false,
+            'textUi'   => $t['text_ui'] ?? false,
         ], $tools),
     ];
 @endphp
@@ -117,10 +120,39 @@
                                 @endforeach
                             </div>
                         </details>
+                    @elseif(!empty($t['text_ui']))
+                        @foreach($t['fields'] as $field)
+                            @if(!in_array($field['name'], ['x', 'y'], true))
+                                <x-tool-field :field="$field" :tool-key="$key" />
+                            @endif
+                        @endforeach
+                        <div class="p-2 px-3 rounded-3 bg-light border d-flex justify-content-between align-items-center small mb-3">
+                            <span class="text-secondary"><i class="bi bi-arrows-move text-accent"></i> {{ __('اسحب النص فوق الصورة') }}</span>
+                            <strong id="textPosReadout" dir="ltr">X: 40, Y: 40</strong>
+                        </div>
+                        <details class="mb-3 small">
+                            <summary class="text-secondary" style="cursor:pointer">{{ __('تعديل الإحداثيات يدوياً (اختياري)') }}</summary>
+                            <div class="row g-2 mt-1">
+                                @foreach($t['fields'] as $field)
+                                    @if(in_array($field['name'], ['x', 'y'], true))
+                                        <div class="col-6">
+                                            <x-tool-field :field="$field" :tool-key="$key" />
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </details>
                     @else
                         @foreach($t['fields'] as $field)
                             <x-tool-field :field="$field" :tool-key="$key" />
                         @endforeach
+                        @if(!empty($t['resize_ui']))
+                            <div class="mb-3">
+                                <button type="button" id="resizeResetBtn" class="btn btn-light btn-sm w-100">
+                                    <i class="bi bi-arrow-counterclockwise"></i> {{ __('إرجاع المقاسات الأصلية') }}
+                                </button>
+                            </div>
+                        @endif
                     @endif
 
                     <button type="submit" class="btn btn-accent w-100 py-2" disabled>

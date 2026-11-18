@@ -60,6 +60,9 @@ class Share extends Model
 
     public function publicUrl(): string
     {
+        if ($this->password_hash !== null) {
+            return route('shares.show', $this->token);
+        }
         return $this->external_url ?: route('shares.show', $this->token);
     }
 }

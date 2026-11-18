@@ -10,12 +10,15 @@ window.JU_PDF = (() => {
         return s;
     };
 
-    /** يحوّل نصاً مثل "1-3,5" إلى مصفوفة فهارس صفرية مرتبة (0-based). */
+    /** يحوّل نصاً مثل "1-3,5" أو "الكل" إلى مصفوفة فهارس صفرية مرتبة (0-based). */
     function parsePages(spec, total) {
-        const text = (spec || '').trim();
-        if (!text) return [...Array(total).keys()];
+        const raw = (spec || '').trim().replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/،/g, ',');
+        const lower = raw.toLowerCase();
+        if (!raw || lower === 'الكل' || lower === 'كل' || lower === 'all') {
+            return [...Array(total).keys()];
+        }
         const set = new Set();
-        for (const part of text.split(',')) {
+        for (const part of raw.split(',')) {
             const p = part.trim();
             if (!p) continue;
             const m = p.match(/^(\d+)\s*-\s*(\d+)$/);
@@ -132,10 +135,20 @@ window.JU_PDF = (() => {
         throw new Error('أداة PDF غير معروفة.');
     }
 
+    async function getPageCount(file) {
+        if (!window.PDFLib || !file) return null;
+        try {
+            const doc = await window.PDFLib.PDFDocument.load(await file.arrayBuffer());
+            return doc.getPageCount();
+        } catch {
+            return null;
+        }
+    }
+
     function makeResult(bytes, name, info) {
         return { blob: new Blob([bytes], { type: 'application/pdf' }), name, info };
     }
 
-    return { run };
+    return { run, getPageCount };
 })();
 

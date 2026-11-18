@@ -47,9 +47,10 @@ foreach (['image', 'video', 'audio', 'document'] as $cat) {
     Route::redirect("/{$cat}.php", "/{$cat}");
 }
 
-// واجهة معالجة الملفات وتسجيل العمليات (مع حماية Rate Limit ضد الإغراق)
+// واجهة معالجة الملفات والتحقق من المدخلات وتسجيل العمليات (مع حماية Rate Limit ضد الإغراق)
 Route::post('/api/process', [ToolController::class, 'process'])->middleware('throttle:30,1')->name('api.process');
 Route::post('/api/process.php', [ToolController::class, 'process'])->middleware('throttle:30,1');
+Route::post('/api/validate-tool', [ToolController::class, 'validateTool'])->middleware('throttle:60,1')->name('api.validate-tool');
 Route::post('/api/log', [ToolController::class, 'log'])->middleware('throttle:60,1')->name('api.log');
 Route::post('/api/log.php', [ToolController::class, 'log'])->middleware('throttle:60,1');
 
@@ -59,11 +60,11 @@ Route::post('/share', [ShareController::class, 'store'])->middleware('throttle:1
 Route::redirect('/share.php', '/share');
 Route::post('/share.php', [ShareController::class, 'store'])->middleware('throttle:10,1');
 
-Route::get('/f/{token}', [ShareController::class, 'show'])->where('token', '[a-f0-9]{16}')->name('shares.show');
-Route::post('/f/{token}', [ShareController::class, 'unlock'])->where('token', '[a-f0-9]{16}')->middleware('throttle:10,1')->name('shares.unlock');
+Route::get('/f/{token?}', [ShareController::class, 'show'])->name('shares.show');
+Route::post('/f/{token?}', [ShareController::class, 'unlock'])->middleware('throttle:10,1')->name('shares.unlock');
 Route::get('/f.php', [ShareController::class, 'show']);
 
-Route::get('/download/{token}', [ShareController::class, 'download'])->where('token', '[a-f0-9]{16}')->name('shares.download');
+Route::get('/download/{token?}', [ShareController::class, 'download'])->name('shares.download');
 Route::get('/download.php', [ShareController::class, 'download']);
 
 // المصادقة (تسجيل الدخول وإنشاء الحساب)

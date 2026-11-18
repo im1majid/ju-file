@@ -9,8 +9,10 @@ use App\Services\ToolCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -124,21 +126,41 @@ class ShareController extends Controller
 
     public function show(Request $request, ?string $token = null): View
     {
-        $token = $token ?? (string) $request->query('t', '');
-        $share = $this->findByToken($token);
+        $rawToken = trim((string) ($token ?? $request->query('t', '')));
+        $remembered = (string) $request->session()->get('pending_share_token', '');
+        $resolvedToken = $rawToken !== '' ? $rawToken : $remembered;
+        $share = $this->findByToken($resolvedToken);
 
-        if (!$share || $share->isExpired()) {
+        // إذا حذف المستخدم الرمز من الرابط ولا يوجد ملف مقيّد بالجلسة، نظهر شاشة القفل (الرمز + كلمة المرور)
+        if ($rawToken === '' && (!$share || $share->isExpired())) {
             return view('shares.show', [
-                'share'       => $share,
-                'expired'     => (bool) $share,
+                'share'       => null,
+                'expired'     => false,
+                'needsLock'   => true,
                 'unlocked'    => false,
                 'isOwner'     => false,
                 'previewable' => null,
             ]);
         }
 
+        if (!$share || $share->isExpired()) {
+            return view('shares.show', [
+                'share'       => $share,
+                'expired'     => (bool) $share,
+                'needsLock'   => false,
+                'unlocked'    => false,
+                'isOwner'     => false,
+                'previewable' => null,
+            ]);
+        }
+
+        // حفظ رمز الملف المحمي في الجلسة حتى لو حذف المستخدم الرمز من الرابط يظل يرى صفحة القفل
+        if ($share->password_hash) {
+            $request->session()->put('pending_share_token', $share->token);
+        }
+
+        // الحماية الحقيقية على السيرفر: لا يُفتح الملف المحمي إلا بعد التحقق من كلمة المرور عبر الجلسة
         $unlocked = !$share->password_hash
-            || (Auth::check() && Auth::id() === $share->user_id)
             || (bool) session("unlocked.{$share->token}", false);
 
         $isOwner = Auth::check() && Auth::id() === $share->user_id;
@@ -149,37 +171,50 @@ class ShareController extends Controller
         return view('shares.show', [
             'share'       => $share,
             'expired'     => false,
+            'needsLock'   => false,
             'unlocked'    => $unlocked,
             'isOwner'     => $isOwner,
             'previewable' => $previewable,
         ]);
     }
 
-    public function unlock(Request $request, string $token): RedirectResponse
+    public function unlock(Request $request, ?string $token = null): RedirectResponse
     {
-        $share = $this->findByToken($token);
-        if ($share && !$share->isExpired()) {
-            if (Hash::check((string) $request->input('password', ''), (string) $share->password_hash)) {
-                session(["unlocked.{$share->token}" => true]);
-                return redirect()->route('shares.show', $share->token)->with('success', 'تم فتح الملف.');
-            }
-            usleep(400000);
-            return redirect()->route('shares.show', $share->token)->with('danger', 'كلمة المرور غير صحيحة.');
+        $resolved = trim((string) ($token ?? $request->input('token', '') ?: $request->session()->get('pending_share_token', '')));
+
+        $request->validate([
+            'password' => ['required', 'string', 'max:72'],
+        ], [
+            'password.required' => __('أدخل كلمة المرور لفتح الملف.'),
+        ]);
+
+        $share = $this->findByToken($resolved);
+        if (!$share || $share->isExpired()) {
+            return back()->withInput($request->only('token'))
+                ->withErrors(['token' => __('رمز الملف غير صالح أو انتهت صلاحيته.')]);
         }
 
-        return redirect()->route('shares.show', $token);
+        if ($share->password_hash && !Hash::check((string) $request->input('password', ''), (string) $share->password_hash)) {
+            usleep(400000);
+            return redirect()->route('shares.show', $share->token)
+                ->withErrors(['password' => __('كلمة المرور غير صحيحة.')]);
+        }
+
+        session(["unlocked.{$share->token}" => true]);
+        return redirect()->route('shares.show', $share->token)->with('success', __('تم فتح الملف.'));
     }
 
-    public function download(Request $request, ?string $token = null): BinaryFileResponse|RedirectResponse
+    public function download(Request $request, ?string $token = null): BinaryFileResponse|RedirectResponse|Response
     {
-        $token = $token ?? (string) $request->query('t', '');
-        $share = $this->findByToken($token);
-        abort_if(!$share || $share->isExpired(), 404, 'الملف غير موجود أو انتهت صلاحيته.');
+        $rawToken = trim((string) ($token ?? $request->query('t', '')));
+        $resolved = $rawToken !== '' ? $rawToken : (string) $request->session()->get('pending_share_token', '');
+        $share = $this->findByToken($resolved);
+        abort_if(!$share || $share->isExpired(), 404, __('الملف غير موجود أو انتهت صلاحيته.'));
 
+        // منع تنزيل الملف من السيرفر ما لم يتم التحقق من كلمة المرور فعلياً
         $unlocked = !$share->password_hash
-            || (Auth::check() && Auth::id() === $share->user_id)
             || (bool) session("unlocked.{$share->token}", false);
-        abort_unless($unlocked, 403, 'هذا الملف محمي بكلمة مرور.');
+        abort_unless($unlocked, 403, __('هذا الملف محمي بكلمة مرور.'));
 
         $inline = $request->boolean('inline') && preg_match('#^(image/(jpeg|png|gif|webp)|video/|audio/)#', $share->mime);
         $path = storage_path('app/uploads/' . $share->stored_name);
@@ -189,9 +224,21 @@ class ShareController extends Controller
                 if (!$inline) {
                     $share->increment('downloads');
                 }
+                // للملفات المحمية بكلمة مرور: نمرّر الملف عبر الخادم بدون كشف رابط Cloudinary المباشر
+                if ($share->password_hash) {
+                    $remote = Http::timeout(60)->get($share->external_url);
+                    abort_unless($remote->successful(), 404, __('تعذّر جلب الملف من التخزين السحابي.'));
+                    $safeName = str_replace(['"', "\r", "\n"], '', $share->original_name);
+                    return response($remote->body(), 200, [
+                        'Content-Type'           => $share->mime,
+                        'Content-Disposition'    => ($inline ? 'inline' : 'attachment') . '; filename="' . $safeName . '"',
+                        'X-Content-Type-Options' => 'nosniff',
+                        'Cache-Control'          => 'private, no-store',
+                    ]);
+                }
                 return redirect()->away($share->external_url);
             }
-            abort(404, 'الملف غير موجود على الخادم.');
+            abort(404, __('الملف غير موجود على الخادم.'));
         }
 
         if (!$inline) {

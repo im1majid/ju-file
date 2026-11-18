@@ -212,14 +212,18 @@
                 return;
             }
             let msg = tr('processErr', 'تعذّر تنفيذ العملية.');
+            let fieldErrors = null;
             try {
                 const raw = responseType === 'blob' && xhr.response instanceof Blob
                     ? await xhr.response.text()
                     : (typeof xhr.response === 'string' ? xhr.response : JSON.stringify(xhr.response));
                 const j = JSON.parse(raw);
-                msg = j.error || j.message || (j.errors ? Object.values(j.errors).flat().join('\n') : msg);
+                if (j.errors && typeof j.errors === 'object') fieldErrors = j.errors;
+                msg = j.error || j.message || (fieldErrors ? Object.values(fieldErrors).flat().join('\n') : msg);
             } catch {}
-            reject(new Error(msg));
+            const err = new Error(msg);
+            if (fieldErrors) err.fieldErrors = fieldErrors;
+            reject(err);
         };
 
         xhr.onerror = () => reject(new Error(tr('genericErr', 'حدث خطأ أثناء المعالجة.')));
@@ -305,6 +309,173 @@
     let resultBlobUrl = null;
     let cropAspectRatio = null;
     let onCropRatioChange = null;
+    let resizeOrigW = 0;
+    let resizeOrigH = 0;
+    let syncFilterPreview = null;
+    let syncTextOverlay = null;
+
+    function clearFieldErrors(form) {
+        if (!form) return;
+        form.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid'));
+        form.querySelectorAll('[data-field-error]').forEach((el) => { el.textContent = ''; });
+    }
+
+    function showFieldErrors(form, fieldErrors) {
+        if (!form || !fieldErrors) return;
+        clearFieldErrors(form);
+        Object.entries(fieldErrors).forEach(([field, msg]) => {
+            const text = Array.isArray(msg) ? msg.join(' ') : String(msg);
+            const inp = form.elements[field];
+            if (inp && typeof inp.classList !== 'undefined') inp.classList.add('is-invalid');
+            const errBox = form.querySelector(`[data-field-error="${CSS.escape(field)}"]`);
+            if (errBox) errBox.textContent = text;
+        });
+    }
+
+    function applyFilterCss(img) {
+        const fForm = document.getElementById('form-filter');
+        if (!fForm || !img) return;
+        const effect = fForm.elements.effect?.value || 'grayscale';
+        const rawPct = Number(fForm.elements.intensity?.value ?? 100);
+        const pct = Math.max(0, Math.min(100, Number.isFinite(rawPct) ? rawPct : 100)) / 100;
+        const map = {
+            grayscale: `grayscale(${(pct * 100).toFixed(0)}%)`,
+            sepia:     `sepia(${(pct * 100).toFixed(0)}%)`,
+            invert:    `invert(${(pct * 100).toFixed(0)}%)`,
+            blur:      `blur(${(pct * 5).toFixed(2)}px)`,
+            sharpen:   `contrast(${(100 + pct * 35).toFixed(0)}%)`,
+            brighten:  `brightness(${(100 + pct * 60).toFixed(0)}%)`,
+        };
+        img.style.filter = map[effect] || '';
+    }
+
+    function initTextOverlay(stage, img) {
+        const tForm = document.getElementById('form-text');
+        if (!tForm) return;
+        const box = document.createElement('div');
+        box.className = 'text-overlay-box';
+        stage.appendChild(box);
+
+        const xInp = tForm.elements.x;
+        const yInp = tForm.elements.y;
+        const readout = document.getElementById('textPosReadout');
+        const natW = img.naturalWidth || 1;
+        const natH = img.naturalHeight || 1;
+
+        if (!xInp.value || Number(xInp.value) >= natW) xInp.value = Math.round(natW * 0.08);
+        if (!yInp.value || Number(yInp.value) >= natH) yInp.value = Math.round(natH * 0.12);
+
+        const update = () => {
+            const scale = (img.clientWidth || natW) / natW;
+            const textVal = (tForm.elements.text?.value || '').trim();
+            const fontKey = tForm.elements.font?.value || 'ibmplex';
+            const fontSize = Math.max(8, Math.min(300, Number(tForm.elements.font_size?.value || 42)));
+            const colorVal = tForm.elements.color?.value || '#ffffff';
+            let x = Math.max(0, Math.min(natW - 1, Math.round(Number(xInp.value || 0))));
+            let y = Math.max(0, Math.min(natH - 1, Math.round(Number(yInp.value || 0))));
+            xInp.value = x;
+            yInp.value = y;
+
+            box.textContent = textVal || tr('textPlaceholder', 'اكتب النص للمعاينة...');
+            box.style.opacity = textVal ? '1' : '0.55';
+            box.style.fontFamily = `'ju-${fontKey}', sans-serif`;
+            box.style.fontSize = `${Math.max(10, fontSize * scale)}px`;
+            box.style.color = colorVal;
+            box.style.left = `${(x * scale).toFixed(1)}px`;
+            box.style.top = `${(y * scale).toFixed(1)}px`;
+
+            const isAr = /[\u0600-\u06FF]/.test(textVal);
+            box.dir = isAr ? 'rtl' : 'ltr';
+            box.style.textAlign = isAr ? 'right' : 'left';
+            if (readout) readout.textContent = `X: ${x} · Y: ${y}`;
+        };
+
+        let drag = null;
+        box.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            box.setPointerCapture(e.pointerId);
+            drag = {
+                startX: e.clientX,
+                startY: e.clientY,
+                origX: Number(xInp.value || 0),
+                origY: Number(yInp.value || 0),
+            };
+        });
+        box.addEventListener('pointermove', (e) => {
+            if (!drag) return;
+            const scale = (img.clientWidth || natW) / natW;
+            const dx = Math.round((e.clientX - drag.startX) / (scale || 1));
+            const dy = Math.round((e.clientY - drag.startY) / (scale || 1));
+            xInp.value = Math.max(0, Math.min(natW - 1, drag.origX + dx));
+            yInp.value = Math.max(0, Math.min(natH - 1, drag.origY + dy));
+            update();
+        });
+        box.addEventListener('pointerup', () => { drag = null; });
+        box.addEventListener('pointercancel', () => { drag = null; });
+
+        syncTextOverlay = update;
+        update();
+    }
+
+    (function initLiveControls() {
+        const rForm = document.getElementById('form-resize');
+        if (rForm) {
+            const wInp = rForm.elements.width;
+            const hInp = rForm.elements.height;
+            const keepRatio = rForm.elements.keep_ratio;
+            const resetBtn = document.getElementById('resizeResetBtn');
+
+            wInp?.addEventListener('input', () => {
+                rForm.dataset.changedAxis = 'width';
+                clearFieldErrors(rForm);
+                const w = Number(wInp.value);
+                if (keepRatio?.checked && resizeOrigW > 0 && resizeOrigH > 0 && Number.isFinite(w) && w > 0) {
+                    hInp.value = Math.max(1, Math.round(w * (resizeOrigH / resizeOrigW)));
+                }
+            });
+            hInp?.addEventListener('input', () => {
+                rForm.dataset.changedAxis = 'height';
+                clearFieldErrors(rForm);
+                const h = Number(hInp.value);
+                if (keepRatio?.checked && resizeOrigW > 0 && resizeOrigH > 0 && Number.isFinite(h) && h > 0) {
+                    wInp.value = Math.max(1, Math.round(h * (resizeOrigW / resizeOrigH)));
+                }
+            });
+            keepRatio?.addEventListener('change', () => {
+                if (!keepRatio.checked || resizeOrigW <= 0 || resizeOrigH <= 0) return;
+                const axis = rForm.dataset.changedAxis || 'width';
+                if (axis === 'height') {
+                    const h = Number(hInp.value);
+                    if (Number.isFinite(h) && h > 0) wInp.value = Math.max(1, Math.round(h * (resizeOrigW / resizeOrigH)));
+                } else {
+                    const w = Number(wInp.value);
+                    if (Number.isFinite(w) && w > 0) hInp.value = Math.max(1, Math.round(w * (resizeOrigH / resizeOrigW)));
+                }
+            });
+            resetBtn?.addEventListener('click', () => {
+                clearFieldErrors(rForm);
+                if (resizeOrigW > 0 && resizeOrigH > 0) {
+                    wInp.value = resizeOrigW;
+                    hInp.value = resizeOrigH;
+                    delete rForm.dataset.changedAxis;
+                }
+            });
+        }
+
+        const fForm = document.getElementById('form-filter');
+        if (fForm) {
+            fForm.elements.effect?.addEventListener('change', () => syncFilterPreview?.());
+            fForm.elements.intensity?.addEventListener('input', () => syncFilterPreview?.());
+        }
+
+        const tForm = document.getElementById('form-text');
+        if (tForm) {
+            ['text', 'font', 'font_size', 'color', 'x', 'y'].forEach((name) => {
+                tForm.elements[name]?.addEventListener('input', () => syncTextOverlay?.());
+                tForm.elements[name]?.addEventListener('change', () => syncTextOverlay?.());
+            });
+        }
+    })();
 
     document.querySelectorAll('[data-crop-ratio]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -337,7 +508,10 @@
         const t = page.tools[key];
 
         chips.forEach((c) => c.classList.toggle('active', c.dataset.tool === key));
-        forms.forEach((f) => f.classList.toggle('d-none', f.dataset.tool !== key));
+        forms.forEach((f) => {
+            clearFieldErrors(f);
+            f.classList.toggle('d-none', f.dataset.tool !== key);
+        });
 
         toolTitle.textContent = t.title;
         toolDesc.textContent = t.desc;
@@ -366,17 +540,41 @@
             : [];
         if (invalid.length) {
             setStatus('danger', esc(tr('unsupportedExt', 'صيغة غير مدعومة للملف «:name». الصيغ المسموحة: :ext', { name: invalid[0].name, ext: t.accept.join(', ') })));
+            fileInput.value = '';
             return;
         }
-        selectedFiles = t.multi ? incoming : [incoming[0]];
-        setStatus('', '');
+        if (t.multi) {
+            const combined = [...selectedFiles, ...incoming];
+            if (combined.length > 20) {
+                selectedFiles = combined.slice(0, 20);
+                setStatus('warning', esc(tr('maxFilesLimit', 'الحد الأقصى 20 ملفاً في المرة الواحدة.')));
+            } else {
+                selectedFiles = combined;
+                setStatus('', '');
+            }
+        } else {
+            selectedFiles = [incoming[0]];
+            setStatus('', '');
+        }
+        fileInput.value = '';
         resultSec.classList.add('d-none');
+        renderPreview();
+    }
+
+    function moveFile(fromIdx, toIdx) {
+        if (toIdx < 0 || toIdx >= selectedFiles.length || fromIdx === toIdx) return;
+        const [item] = selectedFiles.splice(fromIdx, 1);
+        selectedFiles.splice(toIdx, 0, item);
         renderPreview();
     }
 
     function renderPreview() {
         clearUrls();
         preview.innerHTML = '';
+        onCropRatioChange = null;
+        syncFilterPreview = null;
+        syncTextOverlay = null;
+
         const hasFiles = selectedFiles.length > 0;
         forms.forEach((f) => {
             const btn = f.querySelector('button[type="submit"]');
@@ -387,33 +585,53 @@
         if (runHint) runHint.classList.toggle('d-none', hasFiles);
         if (clearBtn) clearBtn.classList.toggle('d-none', !hasFiles);
         preview.classList.toggle('d-none', !hasFiles);
-        if (!hasFiles) return;
+        if (!hasFiles) {
+            resizeOrigW = 0;
+            resizeOrigH = 0;
+            return;
+        }
 
         const t = page.tools[activeTool];
         const f = selectedFiles[0];
 
-        if (selectedFiles.length === 1 && f.type.startsWith('image/')) {
+        if (selectedFiles.length === 1 && !t.multi && f.type.startsWith('image/')) {
             const url = URL.createObjectURL(f);
             objectUrls.push(url);
+            const wrap = document.createElement('div');
+            wrap.className = 'text-center';
             const stage = document.createElement('div');
-            stage.className = t.cropUi ? 'crop-stage' : 'text-center';
+            stage.className = t.cropUi ? 'crop-stage' : (t.textUi ? 'text-stage' : 'd-inline-block');
             const img = document.createElement('img');
             img.src = url;
             img.alt = f.name;
-            if (!t.cropUi) img.className = 'preview-media';
+            if (!t.cropUi && !t.textUi) img.className = 'preview-media';
             stage.appendChild(img);
+            wrap.appendChild(stage);
             const meta = document.createElement('div');
             meta.className = 'small text-secondary mt-2 text-center';
             img.onload = () => {
                 meta.textContent = `${f.name} · ${img.naturalWidth}×${img.naturalHeight}px · ${fmtBytes(f.size)}`;
+                resizeOrigW = img.naturalWidth;
+                resizeOrigH = img.naturalHeight;
                 const rForm = document.getElementById('form-resize');
-                if (rForm && !rForm.elements.width.value && !rForm.elements.height.value) {
-                    rForm.elements.width.value = img.naturalWidth;
-                    rForm.elements.height.value = img.naturalHeight;
+                if (rForm) {
+                    const keepExisting = rForm.elements.keep_existing?.checked
+                        && Number(rForm.elements.width?.value) > 0
+                        && Number(rForm.elements.height?.value) > 0;
+                    if (!keepExisting) {
+                        rForm.elements.width.value = img.naturalWidth;
+                        rForm.elements.height.value = img.naturalHeight;
+                        delete rForm.dataset.changedAxis;
+                    }
                 }
                 if (t.cropUi) initCropBox(stage, img);
+                if (t.filterUi) {
+                    syncFilterPreview = () => applyFilterCss(img);
+                    applyFilterCss(img);
+                }
+                if (t.textUi) initTextOverlay(stage, img);
             };
-            preview.append(stage, meta);
+            preview.append(wrap, meta);
             return;
         }
 
@@ -466,21 +684,76 @@
             return;
         }
 
-        // قائمة ملفات (مستندات / متعدد)
+        // قائمة ملفات (مستندات / متعدد) مع إعادة الترتيب بالسحب والإفلات أو الأسهم والحذف
+        let dragFromIdx = null;
         const ul = document.createElement('ul');
         ul.className = 'list-group list-group-flush small border rounded-3';
         selectedFiles.forEach((file, idx) => {
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `<span class="text-truncate">${esc(file.name)} <span class="text-secondary">(${fmtBytes(file.size)})</span></span>`;
-            if (selectedFiles.length > 1) {
-                const rm = document.createElement('button');
-                rm.type = 'button';
-                rm.className = 'btn btn-sm btn-link text-danger p-0';
-                rm.innerHTML = '<i class="bi bi-x-lg"></i>';
-                rm.onclick = () => { selectedFiles.splice(idx, 1); renderPreview(); };
-                li.appendChild(rm);
+            li.className = 'list-group-item d-flex justify-content-between align-items-center gap-2' + (t.multi ? ' file-order-item' : '');
+            if (t.multi) {
+                li.draggable = true;
+                li.addEventListener('dragstart', (e) => {
+                    dragFromIdx = idx;
+                    li.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                li.addEventListener('dragend', () => {
+                    dragFromIdx = null;
+                    li.classList.remove('dragging');
+                    ul.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+                });
+                li.addEventListener('dragover', (e) => {
+                    if (dragFromIdx === null || dragFromIdx === idx) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    li.classList.add('drag-over');
+                });
+                li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+                li.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    li.classList.remove('drag-over');
+                    if (dragFromIdx !== null && dragFromIdx !== idx) moveFile(dragFromIdx, idx);
+                });
             }
+
+            const labelWrap = document.createElement('span');
+            labelWrap.className = 'text-truncate d-flex align-items-center gap-2 min-w-0';
+            const badgeHtml = t.multi ? `<span class="badge bg-secondary-subtle text-body">#${idx + 1}</span>` : '';
+            const handleHtml = t.multi && selectedFiles.length > 1 ? '<i class="bi bi-grip-vertical text-secondary"></i>' : '';
+            labelWrap.innerHTML = `${handleHtml}${badgeHtml}<span class="text-truncate">${esc(file.name)}</span> <span class="text-secondary flex-shrink-0">(${fmtBytes(file.size)})</span>`;
+
+            const actions = document.createElement('div');
+            actions.className = 'd-flex align-items-center gap-1 flex-shrink-0';
+            if (t.multi && selectedFiles.length > 1) {
+                const up = document.createElement('button');
+                up.type = 'button';
+                up.className = 'btn btn-sm btn-light py-0 px-1';
+                up.title = tr('moveUp', 'تحريك للأعلى');
+                up.disabled = idx === 0;
+                up.innerHTML = '<i class="bi bi-arrow-up"></i>';
+                up.onclick = () => moveFile(idx, idx - 1);
+
+                const down = document.createElement('button');
+                down.type = 'button';
+                down.className = 'btn btn-sm btn-light py-0 px-1';
+                down.title = tr('moveDown', 'تحريك للأسفل');
+                down.disabled = idx === selectedFiles.length - 1;
+                down.innerHTML = '<i class="bi bi-arrow-down"></i>';
+                down.onclick = () => moveFile(idx, idx + 1);
+
+                actions.append(up, down);
+            }
+
+            const rm = document.createElement('button');
+            rm.type = 'button';
+            rm.className = 'btn btn-sm btn-link text-danger p-0 ms-1';
+            rm.title = tr('removeFile', 'إزالة الملف');
+            rm.innerHTML = '<i class="bi bi-x-lg"></i>';
+            rm.onclick = () => { selectedFiles.splice(idx, 1); renderPreview(); };
+            actions.appendChild(rm);
+
+            li.append(labelWrap, actions);
             ul.appendChild(li);
         });
         preview.appendChild(ul);
@@ -705,6 +978,9 @@
         fd.append('_token', csrf());
         fd.append('category', page.category);
         fd.append('tool', activeTool);
+        if (activeTool === 'resize' && form.dataset.changedAxis) {
+            fd.append('changed_axis', form.dataset.changedAxis);
+        }
         selectedFiles.forEach((f) => fd.append('files[]', f));
 
         const { ct, response, xhr } = await xhrPost('api/process.php', fd, {
@@ -989,9 +1265,22 @@
     forms.forEach((form) => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            clearFieldErrors(form);
             if (!selectedFiles.length) {
                 setStatus('warning', esc(tr('readFileFirst', 'اختر ملفاً أولاً قبل التنفيذ.')));
                 return;
+            }
+            if (activeTool === 'resize') {
+                const wVal = Number(form.elements.width?.value);
+                const hVal = Number(form.elements.height?.value);
+                const errs = {};
+                if (!Number.isFinite(wVal) || wVal <= 0) errs.width = tr('invalidDim', 'أدخل قيمة رقمية أكبر من الصفر.');
+                if (!Number.isFinite(hVal) || hVal <= 0) errs.height = tr('invalidDim', 'أدخل قيمة رقمية أكبر من الصفر.');
+                if (Object.keys(errs).length) {
+                    showFieldErrors(form, errs);
+                    setStatus('danger', esc(tr('invalidDimForm', 'أدخل أبعاداً صحيحة أكبر من الصفر.')));
+                    return;
+                }
             }
             const t = page.tools[activeTool];
             const btn = form.querySelector('button[type="submit"]');
@@ -1003,21 +1292,34 @@
             try {
                 if (t.engine === 'server') {
                     await runServerTool(form);
-                } else if (t.engine === 'ffmpeg') {
-                    const out = await window.JU_MEDIA.run(page.category, activeTool, selectedFiles[0], new FormData(form), (prog) => {
-                        if (typeof prog === 'object' && prog) renderProgress(statusBox, prog);
-                        else setStatus('info', esc(prog));
-                    });
-                    renderFileResult(out.blob, out.name, out.info);
-                    logBrowserOp();
-                } else if (t.engine === 'pdf') {
-                    renderProgress(statusBox, { pct: 0, label: tr('processing', 'جاري المعالجة...'), animated: true });
-                    const out = await window.JU_PDF.run(activeTool, selectedFiles, new FormData(form));
-                    renderFileResult(out.blob, out.name, out.info);
-                    logBrowserOp();
+                } else {
+                    const vfd = new FormData(form);
+                    vfd.append('_token', csrf());
+                    vfd.append('category', page.category);
+                    vfd.append('tool', activeTool);
+                    if (t.engine === 'pdf' && !t.multi && window.JU_PDF?.getPageCount) {
+                        const tp = await window.JU_PDF.getPageCount(selectedFiles[0]);
+                        if (tp > 0) vfd.append('total_pages', String(tp));
+                    }
+                    await xhrPost('api/validate-tool', vfd, { responseType: 'json' });
+
+                    if (t.engine === 'ffmpeg') {
+                        const out = await window.JU_MEDIA.run(page.category, activeTool, selectedFiles[0], new FormData(form), (prog) => {
+                            if (typeof prog === 'object' && prog) renderProgress(statusBox, prog);
+                            else setStatus('info', esc(prog));
+                        });
+                        renderFileResult(out.blob, out.name, out.info);
+                        logBrowserOp();
+                    } else if (t.engine === 'pdf') {
+                        renderProgress(statusBox, { pct: 0, label: tr('processing', 'جاري المعالجة...'), animated: true });
+                        const out = await window.JU_PDF.run(activeTool, selectedFiles, new FormData(form));
+                        renderFileResult(out.blob, out.name, out.info);
+                        logBrowserOp();
+                    }
                 }
                 setStatus('', '');
             } catch (err) {
+                if (err.fieldErrors) showFieldErrors(form, err.fieldErrors);
                 setStatus('danger', esc(err.message || tr('genericErr', 'حدث خطأ أثناء المعالجة.')).replace(/\n/g, '<br>'));
             } finally {
                 btn.disabled = false;

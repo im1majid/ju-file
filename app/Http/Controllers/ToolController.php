@@ -33,7 +33,7 @@ class ToolController extends Controller
         }
         if (in_array('pdf', $engines, true)) {
             $scripts[] = 'assets/vendor/pdf-lib.min.js';
-            $scripts[] = 'assets/js/pdf.js?v=3';
+            $scripts[] = 'assets/js/pdf.js?v=4';
         }
 
         return view('tools.category', compact('category', 'cat', 'tools', 'scripts'));
@@ -45,15 +45,25 @@ class ToolController extends Controller
         TextProcessor $textProcessor,
         ZipProcessor $zipProcessor
     ): Response|JsonResponse {
+        $request->validate([
+            'category' => ['required', 'string', 'max:20'],
+            'tool'     => ['required', 'string', 'max:40'],
+        ]);
+
         $category = (string) $request->input('category', '');
         $toolKey  = (string) $request->input('tool', '');
         $tool     = ToolCatalog::categories()[$category]['tools'][$toolKey] ?? null;
 
         if (!$tool || $tool['engine'] !== 'server') {
-            return response()->json(['error' => 'أداة غير معروفة.'], 400);
+            return response()->json(['error' => __('أداة غير معروفة.')], 400);
         }
 
-        [$opts, $errors] = ToolCatalog::validateFields($tool['fields'], $request->all());
+        [$opts, $errors, $fieldErrors] = ToolCatalog::validateFields($tool['fields'], $request->all());
+        if ($request->filled('changed_axis')) {
+            $opts['changed_axis'] = in_array($request->input('changed_axis'), ['width', 'height'], true)
+                ? $request->input('changed_axis')
+                : 'width';
+        }
 
         $files = $request->file('files', []);
         if (!is_array($files)) {
@@ -62,27 +72,27 @@ class ToolController extends Controller
 
         $multi = $tool['multi'] ?? false;
         if (empty($files)) {
-            $errors[] = 'اختر ملفاً أولاً.';
+            $errors[] = __('اختر ملفاً أولاً.');
         } elseif (!$multi && count($files) > 1) {
-            $errors[] = 'هذه الأداة تقبل ملفاً واحداً فقط.';
+            $errors[] = __('هذه الأداة تقبل ملفاً واحداً فقط.');
         } elseif (count($files) > 20) {
-            $errors[] = 'الحد الأقصى 20 ملفاً في المرة الواحدة.';
+            $errors[] = __('الحد الأقصى 20 ملفاً في المرة الواحدة.');
         }
 
         $maxBytes = ToolCatalog::maxUploadBytes(Auth::check());
 
         foreach ($files as $f) {
             if (!$f->isValid()) {
-                $errors[] = 'تعذّر رفع الملف: ' . $f->getErrorMessage();
+                $errors[] = __('تعذّر رفع الملف: ') . $f->getErrorMessage();
             } elseif ($f->getSize() > $maxBytes) {
                 $errors[] = __('حجم الملف يتجاوز الحد الأقصى (:size).', ['size' => ToolCatalog::formatBytes($maxBytes)]);
             } elseif ($tool['accept'] && !in_array(strtolower($f->getClientOriginalExtension()), $tool['accept'], true)) {
-                $errors[] = 'صيغة «' . $f->getClientOriginalName() . '» غير مدعومة. الصيغ المقبولة: ' . implode('، ', $tool['accept']);
+                $errors[] = __('صيغة «:name» غير مدعومة. الصيغ المقبولة: :ext', ['name' => $f->getClientOriginalName(), 'ext' => implode('، ', $tool['accept'])]);
             }
         }
 
         if ($errors) {
-            return response()->json(['error' => implode("\n", $errors)], 422);
+            return response()->json(['error' => implode("\n", $errors), 'errors' => $fieldErrors], 422);
         }
 
         try {
@@ -120,6 +130,32 @@ class ToolController extends Controller
         }
 
         return response($result['data'], 200, $headers);
+    }
+
+    public function validateTool(Request $request): JsonResponse
+    {
+        $request->validate([
+            'category'    => ['required', 'string', 'max:20'],
+            'tool'        => ['required', 'string', 'max:40'],
+            'total_pages' => ['nullable', 'integer', 'min:1', 'max:10000'],
+        ]);
+
+        $category = (string) $request->input('category', '');
+        $toolKey  = (string) $request->input('tool', '');
+        $tool     = ToolCatalog::categories()[$category]['tools'][$toolKey] ?? null;
+
+        if (!$tool) {
+            return response()->json(['error' => __('أداة غير معروفة.')], 400);
+        }
+
+        $totalPages = $request->filled('total_pages') ? (int) $request->input('total_pages') : null;
+        [, $errors, $fieldErrors] = ToolCatalog::validateFields($tool['fields'], $request->all(), $totalPages);
+
+        if ($errors) {
+            return response()->json(['error' => implode("\n", $errors), 'errors' => $fieldErrors], 422);
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function log(Request $request): JsonResponse

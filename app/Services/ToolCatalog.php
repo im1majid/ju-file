@@ -39,12 +39,13 @@ class ToolCatalog
                         ],
                     ],
                     'resize' => [
-                        'title' => __('تغيير مقاس الصورة'), 'icon' => 'bi-aspect-ratio', 'engine' => 'server', 'accept' => $imageExt,
+                        'title' => __('تغيير مقاس الصورة'), 'icon' => 'bi-aspect-ratio', 'engine' => 'server', 'accept' => $imageExt, 'resize_ui' => true,
                         'desc' => __('حدّد العرض أو الارتفاع الجديد بالبكسل.'),
                         'fields' => [
                             ['name' => 'width', 'label' => __('العرض (px)'), 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
                             ['name' => 'height', 'label' => __('الارتفاع (px)'), 'type' => 'number', 'min' => 1, 'max' => 10000, 'required' => false],
-                            ['name' => 'keep_ratio', 'label' => __('حافظ على تناسب الأبعاد'), 'type' => 'checkbox', 'value' => true],
+                            ['name' => 'keep_ratio', 'label' => __('الحفاظ على تناسب الأبعاد'), 'type' => 'checkbox', 'value' => true],
+                            ['name' => 'keep_existing', 'label' => __('الاحتفاظ بنفس المقاسات عند تغيير الصورة'), 'type' => 'checkbox', 'value' => false],
                         ],
                     ],
                     'crop' => [
@@ -73,10 +74,28 @@ class ToolCatalog
                         ],
                     ],
                     'filter' => [
-                        'title' => __('فلاتر وتأثيرات لونية'), 'icon' => 'bi-magic', 'engine' => 'server', 'accept' => $imageExt,
-                        'desc' => __('أبيض وأسود، سيبيا، تمويه، وزيادة الحدة أو الإضاءة.'),
+                        'title' => __('فلاتر وتأثيرات لونية'), 'icon' => 'bi-magic', 'engine' => 'server', 'accept' => $imageExt, 'filter_ui' => true,
+                        'desc' => __('أبيض وأسود، سيبيا، تمويه، وزيادة الحدة أو الإضاءة مع تحكم بالشدة.'),
                         'fields' => [
                             ['name' => 'effect', 'label' => __('التأثير'), 'type' => 'select', 'value' => 'grayscale', 'options' => ['grayscale' => __('أبيض وأسود'), 'sepia' => __('سيبيا (قديم)'), 'negate' => __('عكس الألوان'), 'blur' => __('تمويه'), 'sharpen' => __('زيادة الحدة'), 'brighten' => __('زيادة الإضاءة')]],
+                            ['name' => 'intensity', 'label' => __('شدة التأثير'), 'type' => 'range', 'min' => 0, 'max' => 100, 'value' => 100, 'suffix' => '%'],
+                        ],
+                    ],
+                    'text' => [
+                        'title' => __('إضافة نص على الصورة'), 'icon' => 'bi-fonts', 'engine' => 'server', 'accept' => $imageExt, 'text_ui' => true,
+                        'desc' => __('أضف نصاً عربياً أو إنجليزياً فوق الصورة واختر الخط واللون واسحبه للموضع المطلوب.'),
+                        'fields' => [
+                            ['name' => 'text', 'label' => __('النص'), 'type' => 'textarea', 'maxlength' => 500, 'placeholder' => __('اكتب النص هنا...')],
+                            ['name' => 'font', 'label' => __('الخط'), 'type' => 'select', 'value' => 'ibmplex', 'options' => [
+                                'ibmplex'      => __('IBM Plex Arabic (حديث)'),
+                                'ibmplex-bold' => __('IBM Plex Bold (عريض)'),
+                                'amiri'        => __('Amiri (نسخ كلاسيكي)'),
+                                'amiri-bold'   => __('Amiri Bold (نسخ عريض)'),
+                            ]],
+                            ['name' => 'font_size', 'label' => __('حجم الخط (px)'), 'type' => 'number', 'min' => 8, 'max' => 300, 'value' => 42],
+                            ['name' => 'color', 'label' => __('لون النص'), 'type' => 'color', 'value' => '#ffffff'],
+                            ['name' => 'x', 'label' => __('الموضع الأفقي X'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 40],
+                            ['name' => 'y', 'label' => __('الموضع العمودي Y'), 'type' => 'number', 'min' => 0, 'max' => 20000, 'value' => 40],
                         ],
                     ],
                 ],
@@ -174,19 +193,19 @@ class ToolCatalog
                     'pdf_extract' => [
                         'title' => __('استخراج صفحات PDF'), 'icon' => 'bi-file-earmark-break', 'engine' => 'pdf', 'accept' => ['pdf'],
                         'desc' => __('أنشئ ملف PDF جديداً من صفحات محددة.'),
-                        'fields' => [['name' => 'pages', 'label' => __('الصفحات (مثال: 1-3,5)'), 'type' => 'text', 'placeholder' => '1-3,5']],
+                        'fields' => [['name' => 'pages', 'label' => __('نطاق الصفحات (مثال: 1-5 أو 1,3,5)'), 'type' => 'text', 'page_range' => true, 'placeholder' => __('1-5 أو 1,3,5')]],
                     ],
                     'pdf_delete' => [
                         'title' => __('حذف صفحات من PDF'), 'icon' => 'bi-file-earmark-x', 'engine' => 'pdf', 'accept' => ['pdf'],
                         'desc' => __('احذف صفحات لا تحتاجها من ملف PDF.'),
-                        'fields' => [['name' => 'pages', 'label' => __('الصفحات المحذوفة (مثال: 2,4-6)'), 'type' => 'text', 'placeholder' => '2,4-6']],
+                        'fields' => [['name' => 'pages', 'label' => __('نطاق الصفحات المحذوفة (مثال: 2,4-6 أو 1-3)'), 'type' => 'text', 'page_range' => true, 'placeholder' => __('2,4-6 أو 1-3')]],
                     ],
                     'pdf_rotate' => [
                         'title' => __('تدوير صفحات PDF'), 'icon' => 'bi-arrow-clockwise', 'engine' => 'pdf', 'accept' => ['pdf'],
-                        'desc' => __('دوّر كل الصفحات أو صفحات محددة.'),
+                        'desc' => __('دوّر كل الصفحات أو نطاقاً محدداً من الصفحات.'),
                         'fields' => [
                             ['name' => 'angle', 'label' => __('الزاوية'), 'type' => 'select', 'value' => '90', 'options' => ['90' => '90°', '180' => '180°', '270' => '270°']],
-                            ['name' => 'pages', 'label' => __('الصفحات (فارغ = الكل)'), 'type' => 'text', 'required' => false, 'placeholder' => __('الكل')],
+                            ['name' => 'pages', 'label' => __('نطاق الصفحات (مثال: 1-5 أو 1,3,5 أو الكل)'), 'type' => 'text', 'page_range' => true, 'required' => false, 'placeholder' => __('1-5 أو 1,3,5 أو الكل')],
                         ],
                     ],
                     'images_pdf' => [
@@ -295,10 +314,16 @@ class ToolCatalog
         return $c ? $c['title'] . ' · ' . ($c['tools'][$tool]['title'] ?? $tool) : $tool;
     }
 
-    public static function validateFields(array $fields, array $input): array
+    public static function validateFields(array $fields, array $input, ?int $totalPages = null): array
     {
         $clean = [];
         $errors = [];
+        $fieldErrors = [];
+
+        $addError = function (string $name, string $msg) use (&$errors, &$fieldErrors): void {
+            $errors[] = $msg;
+            $fieldErrors[$name] = $fieldErrors[$name] ?? $msg;
+        };
 
         foreach ($fields as $f) {
             $name = $f['name'];
@@ -314,38 +339,91 @@ class ToolCatalog
             $str = is_scalar($raw) ? trim((string) $raw) : '';
             if ($str === '') {
                 if ($required && !isset($f['value'])) {
-                    $errors[] = __('الحقل «:label» مطلوب.', ['label' => $label]);
+                    $addError($name, __('الحقل «:label» مطلوب.', ['label' => $label]));
                 }
                 $clean[$name] = $f['value'] ?? null;
                 continue;
             }
 
-            if (in_array($f['type'], ['number', 'range'], true)) {
+            if ($f['type'] === 'color') {
+                if (!preg_match('/^#[0-9a-fA-F]{6}$/', $str)) {
+                    $addError($name, __('صيغة اللون في «:label» غير صالحة.', ['label' => $label]));
+                }
+                $clean[$name] = $str;
+            } elseif (in_array($f['type'], ['number', 'range'], true)) {
                 if (!is_numeric($str)) {
-                    $errors[] = __('قيمة «:label» يجب أن تكون رقماً.', ['label' => $label]);
+                    $addError($name, __('قيمة «:label» يجب أن تكون رقماً.', ['label' => $label]));
                     continue;
                 }
                 $num = (float) $str;
                 if (isset($f['min']) && $num < $f['min']) {
-                    $errors[] = __('«:label» أقل من :min.', ['label' => $label, 'min' => $f['min']]);
+                    $addError($name, __('«:label» أقل من :min.', ['label' => $label, 'min' => $f['min']]));
                 }
                 if (isset($f['max']) && $num > $f['max']) {
-                    $errors[] = __('«:label» أكبر من :max.', ['label' => $label, 'max' => $f['max']]);
+                    $addError($name, __('«:label» أكبر من :max.', ['label' => $label, 'max' => $f['max']]));
                 }
                 $clean[$name] = isset($f['step']) && $f['step'] < 1 ? $num : (int) round($num);
             } elseif ($f['type'] === 'select') {
                 if (!array_key_exists($str, $f['options'])) {
-                    $errors[] = __('خيار غير صالح في «:label».', ['label' => $label]);
+                    $addError($name, __('خيار غير صالح في «:label».', ['label' => $label]));
                 }
                 $clean[$name] = $str;
             } else {
                 if (isset($f['maxlength']) && mb_strlen($str) > $f['maxlength']) {
-                    $errors[] = __('«:label» أطول من اللازم.', ['label' => $label]);
+                    $addError($name, __('«:label» أطول من اللازم.', ['label' => $label]));
+                }
+                if (!empty($f['page_range'])) {
+                    if ($err = self::validatePageRange($str, $totalPages)) {
+                        $addError($name, $err);
+                    }
                 }
                 $clean[$name] = $str;
             }
         }
 
-        return [$clean, $errors];
+        return [$clean, $errors, $fieldErrors];
+    }
+
+    public static function validatePageRange(string $spec, ?int $totalPages = null): ?string
+    {
+        $normalized = mb_strtolower(trim($spec));
+        if ($normalized === '' || in_array($normalized, ['الكل', 'كل', 'all'], true)) {
+            return null;
+        }
+
+        // تحويل الأرقام العربية إلى إنجليزية إن وُجدت
+        $spec = strtr($spec, ['٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9','،'=>',']);
+        $parts = array_filter(array_map('trim', explode(',', $spec)), fn ($p) => $p !== '');
+        if (!$parts) {
+            return __('نطاق الصفحات غير صالح. أدخل أرقاماً مثل 1-5 أو 1,3,5 أو «الكل».');
+        }
+
+        foreach ($parts as $p) {
+            if (preg_match('/^(\d+)\s*-\s*(\d+)$/', $p, $m)) {
+                $a = (int) $m[1];
+                $b = (int) $m[2];
+                if ($a < 1 || $b < 1) {
+                    return __('أرقام الصفحات يجب أن تبدأ من 1 فأكثر.');
+                }
+                if ($a > $b) {
+                    return __('النطاق «:range» غير صحيح: رقم البداية أكبر من النهاية.', ['range' => $p]);
+                }
+                if ($totalPages !== null && $b > $totalPages) {
+                    return __('الصفحة :page خارج حدود المستند (إجمالي الصفحات: :total).', ['page' => $b, 'total' => $totalPages]);
+                }
+            } elseif (preg_match('/^\d+$/', $p)) {
+                $n = (int) $p;
+                if ($n < 1) {
+                    return __('أرقام الصفحات يجب أن تبدأ من 1 فأكثر.');
+                }
+                if ($totalPages !== null && $n > $totalPages) {
+                    return __('الصفحة :page خارج حدود المستند (إجمالي الصفحات: :total).', ['page' => $n, 'total' => $totalPages]);
+                }
+            } else {
+                return __('صيغة النطاق «:part» غير صالحة. استخدم أرقاماً مثل: 1-5 أو 1,3,5 أو «الكل».', ['part' => $p]);
+            }
+        }
+
+        return null;
     }
 }

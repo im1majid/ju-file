@@ -531,3 +531,46 @@ main { flex: 1; }
     from { background-position: 1rem 0; }
     to   { background-position: 0 0; }
 }
+
+/* خطوط أداة إضافة النص على الصورة (تطابق خطوط الخادم) */
+@font-face { font-family: 'ju-ibmplex'; src: url('../fonts/ibmplex.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'ju-ibmplex-bold'; src: url('../fonts/ibmplex-bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'ju-amiri'; src: url('../fonts/amiri.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'ju-amiri-bold'; src: url('../fonts/amiri-bold.ttf') format('truetype'); font-display: swap; }
+
+/* معاينة وسحب النص فوق الصورة */
+.text-stage {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    user-select: none;
+}
+.text-stage img {
+    display: block;
+    max-width: 100%;
+    max-height: 360px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+.text-overlay-box {
+    position: absolute;
+    cursor: move;
+    border: 1.5px dashed var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    line-height: 1.35;
+    text-shadow: 1px 2px 3px rgba(0, 0, 0, .55);
+    touch-action: none;
+    max-width: 95%;
+}
+
+/* قائمة ترتيب الملفات (سحب وإفلات + أسهم) */
+.file-order-item {
+    cursor: grab;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+.file-order-item.dragging { opacity: .45; }
+.file-order-item.drag-over { border-top: 2px solid var(--accent) !important; }

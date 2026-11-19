@@ -32,8 +32,11 @@ Route::get('/sitemap.xml', function () {
         $xml .= '  <url><loc>' . htmlspecialchars($u, ENT_XML1) . '</loc><changefreq>weekly</changefreq></url>' . "\n";
     }
     $xml .= '</urlset>';
-    return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
-})->name('sitemap');
+    return response($xml, 200, [
+        'Content-Type'  => 'application/xml; charset=UTF-8',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+})->withoutMiddleware(['web'])->name('sitemap');
 
 // الصفحة الرئيسية
 Route::get('/', [HomeController::class, 'index'])->name('home');

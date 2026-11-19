@@ -40,14 +40,14 @@ Route::get('/sitemap.xml', function () {
 
 // الصفحة الرئيسية
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::redirect('/index.php', '/');
+Route::permanentRedirect('/index.php', '/');
 
 // صفحات أدوات الملفات حسب النوع
 foreach (['image', 'video', 'audio', 'document'] as $cat) {
     Route::get("/{$cat}", [ToolController::class, 'category'])
         ->defaults('category', $cat)
         ->name("tools.{$cat}");
-    Route::redirect("/{$cat}.php", "/{$cat}");
+    Route::permanentRedirect("/{$cat}.php", "/{$cat}");
 }
 
 // واجهة معالجة الملفات والتحقق من المدخلات وتسجيل العمليات (مع حماية Rate Limit ضد الإغراق)

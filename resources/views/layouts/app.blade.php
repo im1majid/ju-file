@@ -74,7 +74,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $metaTitle = trim($__env->yieldContent('title', config('app.name'))) . ' · ' . config('app.name');
-        $metaDesc  = __('منصة متخصصة لتعديل الملفات، تحويل الصيغ، وتصغير الحجم — مع إمكانية تحويل أي ملف إلى رابط مباشر أو رمز QR للمشاركة السريعة.');
+        $metaDesc  = trim($__env->yieldContent('description')) ?: __('منصة متخصصة لتعديل الملفات، تحويل الصيغ، وتصغير الحجم — مع إمكانية تحويل أي ملف إلى رابط مباشر أو رمز QR للمشاركة السريعة.');
     @endphp
     <title>{{ $metaTitle }}</title>
     <meta name="description" content="{{ $metaDesc }}">

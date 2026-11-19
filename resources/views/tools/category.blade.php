@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', __('أدوات :title', ['title' => $cat['title']]))
+@section('description', $cat['desc'])
 @php
     $activePage = $category;
     $firstKey = array_key_first($tools);

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', __('مشاركة ملف برابط أو QR'))
+@section('description', __('ارفع صورة، فيديو، صوت، PDF أو أي ملف لتحصل فوراً على رابط مشاركة عام ورمز QR قابل للمسح.'))
 @php $activePage = 'share'; @endphp
 
 @section('content')

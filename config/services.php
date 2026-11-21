@@ -42,4 +42,8 @@ return [
         'folder'     => env('CLOUDINARY_FOLDER', 'ju-file'),
     ],
 
+    'rapidapi' => [
+        'key' => env('RAPIDAPI_KEY'),
+    ],
+
 ];

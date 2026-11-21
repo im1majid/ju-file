@@ -16,6 +16,9 @@
         <a href="{{ route('shares.create') }}" class="btn btn-accent btn-lg px-4">
             <i class="bi bi-qr-code"></i> {{ __('حوّل ملفاً إلى رابط أو QR') }}
         </a>
+        <a href="{{ route('social.download') }}" class="btn btn-outline-dark btn-lg px-4">
+            <i class="bi bi-cloud-arrow-down text-accent"></i> {{ __('تحميل المقاطع والصور') }}
+        </a>
         @guest
             <a href="{{ route('register') }}" class="btn btn-outline-dark btn-lg px-4">{{ __('حساب مجاني لحفظ روابطك') }}</a>
         @else
@@ -30,9 +33,9 @@
         <span class="small text-secondary">{{ __('تظهر لك الخيارات المتاحة لكل نوع ملف تحديداً') }}</span>
     </div>
 
-    <div class="row g-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5 g-3">
         @foreach($cats as $key => $cat)
-            <div class="col-md-6 col-lg-3">
+            <div class="col">
                 <a class="cat-card panel h-100 d-flex flex-column text-decoration-none text-reset" href="{{ route('tools.' . $key) }}">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="cat-icon"><i class="bi {{ $cat['icon'] }}"></i></div>
@@ -52,6 +55,29 @@
                 </a>
             </div>
         @endforeach
+
+        <div class="col">
+            <a class="cat-card panel h-100 d-flex flex-column text-decoration-none text-reset" href="{{ route('social.download') }}">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="cat-icon"><i class="bi bi-cloud-arrow-down"></i></div>
+                    <span class="badge text-bg-light">{{ __(':count منصات', ['count' => 5]) }}</span>
+                </div>
+                <h3 class="h5 fw-bold mb-1">{{ __('تحميل الصور والمقاطع') }}</h3>
+                <p class="small text-secondary mb-3 flex-grow-1">{{ __('حمّل الفيديوهات والصور واستخرج الصوت بأعلى جودة من منصات التواصل.') }}</p>
+                <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="mini-tag">YouTube</span>
+                    <span class="mini-tag">Instagram</span>
+                    <span class="mini-tag">TikTok</span>
+                    <span class="mini-tag">X (Twitter)</span>
+                    <span class="mini-tag">Facebook</span>
+                    <span class="mini-tag">{{ __('استخراج الصوت') }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center small fw-bold text-accent mt-auto pt-2 border-top">
+                    <span>{{ __('فتح أدوات التحميل') }}</span>
+                    <i class="bi bi-arrow-left icon-directional"></i>
+                </div>
+            </a>
+        </div>
     </div>
 </section>
 

@@ -138,6 +138,11 @@
                         </a>
                     </li>
                 @endforeach
+                <li class="nav-item">
+                    <a class="nav-link {{ ($activePage ?? '') === 'social_download' ? 'active' : '' }}" href="{{ route('social.download') }}">
+                        <i class="bi bi-cloud-arrow-down"></i> {{ __('أدوات التحميل') }}
+                    </a>
+                </li>
             </ul>
             <div class="d-flex align-items-center gap-2">
                 <a class="btn btn-accent btn-sm" href="{{ route('shares.create') }}"><i class="bi bi-qr-code"></i> {{ __('مشاركة ملف') }}</a>
@@ -198,6 +203,7 @@
                 @foreach($navCategories as $navKey => $footerCat)
                     <a class="link-secondary text-decoration-none" href="{{ route('tools.' . $navKey) }}">{{ $footerCat['title'] }}</a>
                 @endforeach
+                <a class="link-secondary text-decoration-none" href="{{ route('social.download') }}">{{ __('أدوات التحميل') }}</a>
                 <a class="link-secondary text-decoration-none" href="{{ route('shares.create') }}">{{ __('المشاركة') }}</a>
             </nav>
             <div>&copy; {{ date('Y') }}</div>

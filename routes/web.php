@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ShareController;
+use App\Http\Controllers\SocialDownloadController;
 use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,7 @@ Route::get('/sitemap.xml', function () {
         route('tools.video'),
         route('tools.audio'),
         route('tools.document'),
+        route('social.download'),
         route('shares.create'),
     ];
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
@@ -49,6 +51,12 @@ foreach (['image', 'video', 'audio', 'document'] as $cat) {
         ->name("tools.{$cat}");
     Route::permanentRedirect("/{$cat}.php", "/{$cat}");
 }
+
+// أداة تحميل المقاطع والصور والصوتيات من المنصات
+Route::get('/social-download', [SocialDownloadController::class, 'index'])->name('social.download');
+Route::post('/social-download', [SocialDownloadController::class, 'fetch'])->middleware('throttle:20,1')->name('social.download.fetch');
+Route::get('/social-download/stream', [SocialDownloadController::class, 'stream'])->middleware('throttle:30,1')->name('social.download.stream');
+Route::permanentRedirect('/social_download.php', '/social-download');
 
 // واجهة معالجة الملفات والتحقق من المدخلات وتسجيل العمليات (مع حماية Rate Limit ضد الإغراق)
 Route::post('/api/process', [ToolController::class, 'process'])->middleware('throttle:30,1')->name('api.process');
